@@ -1,4 +1,19 @@
-program inviscid_burgers
+!---------------------------------------------------------------------!
+! The code solves the advection diffusion equation using Proxy equation 
+! approach given in the below reference paper using MPI. The code is 
+! still under development
+!
+!---------------------------------------------------------------------!
+!
+! Mittal, Ankita, and Sharath Girimaji. "Proxy-equation paradigm: 
+! A strategy for massively parallel asynchronous computations." 
+! Physical Review E 96.3 (2017): 033304.
+!
+!---------------------------------------------------------------------!
+!	Author: Suraj Pawar
+!---------------------------------------------------------------------!
+
+program advection_diffusion
 
 use mpi
 
@@ -25,9 +40,7 @@ integer								:: i_global_low, i_global_high
 
 
 dx = (x_max-x_min)/(n_global-1)
-! dt = dx**2
 dt = cfl*(dx**2)/alpha
-! print *, dx, dt
 
 ! Initialize MPI
 call MPI_INIT(ierr)
@@ -59,7 +72,7 @@ call MPI_FINALIZE(ierr)
 
 deallocate(u_initial_local)
 
-end program inviscid_burgers  
+end program advection_diffusion  
 
 subroutine update(rank, nprocs, n_local, n_global, u_initial_local, dx, x_min, dt, T, kappa, c, alpha)
 
@@ -117,7 +130,7 @@ do k = 2,time_steps
 
 print *, rank, k
 
-!###############  calculate results at new time step ###############! 
+!********************  calculate results at new time step ********************
 	do i_local = i_local_low + 1 , i_local_high - 1
 !		call ftcds(u_final_local(i_local+1), u_initial_local(i_local+1), &
 !				   u_initial_local(i_local+1-1), u_initial_local(i_local+1+1), &
@@ -129,7 +142,7 @@ print *, rank, k
 	end do
 
 
-!############### communicate to share common points between two processors ###############!
+!********************  communicate to share common points between two processors ************ 
 
 ! Comminication to left processor and from right processor
 	if (rank > 0) then 
@@ -159,20 +172,12 @@ print *, rank, k
 		u_final_local(i_local_high+1) = u_final_local(i_local_high) 
 	end if
 	
-!###############  update initial field with final field	###############! 
+!***************  update initial field with final field ********************  
 	do i_local = i_local_low, i_local_high
 		u_initial_local(i_local+1) = u_final_local(i_local+1)
 		
 	end do
 end do
-
-
-!print *, 'Rank', rank
-!print *, i_global_low, i_global_high
-!print *, i_local_low, i_local_high
-!print *, u_initial_local
-!1 format(f2.2)
-!print (*, Format), 'Initial velocity field', u_initial_local
 
 return
 end subroutine update 
@@ -269,9 +274,6 @@ if (rank == 0) then
 		write(4,*), x_global(i), u_initial_global(i), u_global(i)
 	end do
 
-	! print *, u_global 
-	! print *, i_global_low, n_local_procs
-	! Writing the final solution
 	deallocate(u_global)
 	
 else
@@ -291,15 +293,4 @@ end if
 
 return
 end subroutine collect
-
-subroutine ftcds(sol, mid, left1, right1, alpha, c)
-	real*8		:: sol, mid, left1, right1, alpha, c
-	real*8		:: dx, dt
-	common dx, dt 
-	
-	sol = mid -c*dt*(right1-left1)/(2.0*dx) + alpha*dt*(right1 - 2.0*mid + left1)/(dx**2)
-	
-	return
-end subroutine ftcds
-
 
