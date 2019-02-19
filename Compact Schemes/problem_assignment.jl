@@ -89,7 +89,7 @@ function initial_condition(u_numerical, nx, ny, flag_start)
 #    flag_start = flag for initial condition [1]- zero, [2]- random
 #
 # Returns/ assigns:
-#   u_numerical = numerical solution    
+#   u_numerical = numerical solution
 #-------------------------------------------------------------------------------
     if flag_start == 1
         for i = 1:nx+1 for j = 1:ny+1
@@ -99,5 +99,27 @@ function initial_condition(u_numerical, nx, ny, flag_start)
         for i = 1:nx+1 for j = 1:ny+1
             u_numerical[i,j] = rand()
         end end
+    end
+end
+
+function boundary_condition(u_numerical, u_exact, nx, ny)
+#-------------------------------------------------------------------------------
+# Arguments:
+#    nx,ny = number of grid in x and y direction
+#    u_numerical = numerical solution
+#    u_exact = exact solution
+#
+# Returns/ assigns:
+#    boundary points of u_numerical
+#-------------------------------------------------------------------------------
+
+    for i = 1:nx+1
+        u_numerical[i,1] = u_exact[i,1]
+        u_numerical[i, ny+1] = u_exact[i, ny+1]
+    end
+
+    for j = 1:ny+1
+        u_numerical[1,j] = u_exact[1,j]
+        u_numerical[nx+1,j] = u_exact[nx+1,j]
     end
 end

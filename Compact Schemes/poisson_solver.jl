@@ -1,4 +1,8 @@
 include("./problem_assignment.jl")
+include("residualcalculation.jl")
+include("gauss_seidel.jl")
+include("solver.jl")
+
 # using problem_assignment
 
 # read data from text file for input parameters
@@ -26,20 +30,13 @@ flag_restriction        = Int32(input_parameters[6])
 tolerance               = Float32(input_parameters[7])
 omega                   = Float32(input_parameters[8])
 relaxation_f2c          = Int32(input_parameters[9])
-relaxaation_c2f         = Int32(input_parameters[10])
-relazation_coarsest     = Int32(input_parameters[11])
+relaxation_c2f          = Int32(input_parameters[10])
+relaxation_coarsest     = Int32(input_parameters[11])
 maximum_iterations      = Int32(input_parameters[12])
 tiny                    = Float32(input_parameters[13])
 k = 1
 
-x_left = 0.0
-x_right = 0.0
-y_top = 0.0
-y_bottom = 0.0
 # Assign the domain size based on initial problem
-#assign_domain(x_left, x_right, y_top, y_bottom, flag_problem)
-
-#function assign_domain(x_left::Float64, x_right::Float64, y_top::Float64, y_bottom::Float64, flag_problem::Int32)
     if flag_problem == 1
         x_left      = -1.0
         x_right     = 1.0
@@ -53,7 +50,6 @@ y_bottom = 0.0
         y_bottom    = 0.0
         y_top       = 1.0
     end
-#end
 
 # calculation of grid spacing
 dx = (x_right - x_left)/nx
@@ -66,10 +62,25 @@ u_exact         = Array{Float32}(undef, nx+1, ny+1)
 source          = Array{Float32}(undef, nx+1, ny+1)
 u_numerical     = Array{Float32}(undef, nx+1, ny+1)
 
-# assign the computational domain
+# assign the computational domain, exact solution, source term ,
+# initial condition, boundary condition
 calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
                         x_right, y_top, y_bottom)
 
 assign_problem(x_position, y_position, source, u_exact, flag_problem)
 
 initial_condition(u_numerical, nx, ny, flag_start)
+
+boundary_condition(u_numerical, u_exact, nx, ny)
+
+# calculate residual and initial l2 norm of the residual
+residual         = zeros(Float32, nx+1, ny+1)
+initial_rms      = 0.0
+rms              = 0.0
+compute_residual(nx, ny, dx, dy, source, u_numerical, residual)
+
+rms = compute_l2norm(nx, ny, residual)
+
+initial_rms = rms
+
+solver()
