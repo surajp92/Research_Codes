@@ -1,4 +1,4 @@
-include("./problem_assignment.jl")
+include("problem_assignment.jl")
 include("residualcalculation.jl")
 include("gauss_seidel.jl")
 include("solver.jl")
