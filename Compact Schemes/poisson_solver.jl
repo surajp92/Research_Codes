@@ -3,16 +3,17 @@ include("residualcalculation.jl")
 include("gauss_seidel.jl")
 include("solver.jl")
 
-# using problem_assignment
+using CPUTime
 
 # read data from text file for input parameters
 file_input = open("input.txt")
 input_lines = readlines(file_input)
-input_parameters = Array{Float32}(undef, 13)
+input_parameters = Array{Float64}(undef, 13)
 counter = 1
 for line in input_lines
-    m = match(r"^([0-9]+)", line)
-    input_parameters[counter] = parse(Float32, m[1])
+#    m = match(r"^([0-9]+)", line)
+    m = split(line, "\t")
+    input_parameters[counter] = parse(Float64, m[1])
     global counter += 1
 end
 
@@ -67,20 +68,21 @@ u_numerical     = Array{Float64}(undef, nx+1, ny+1)
 calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
                         x_right, y_top, y_bottom)
 
+# calculate the source term and exact solution based on the problem flag
 assign_problem(x_position, y_position, source, u_exact, flag_problem)
 
+# assign initial condition (zero or random) based on start flag
 initial_condition(u_numerical, nx, ny, flag_start)
 
+# assign boundary conditions (exact solution) for the domain
 boundary_condition(u_numerical, u_exact, nx, ny)
 
 # calculate residual and initial l2 norm of the residual
 residual         = zeros(Float64, nx+1, ny+1)
 initial_rms      = 0.0
 rms              = 0.0
-compute_residual(nx, ny, dx, dy, source, u_numerical, residual)
-
-rms = compute_l2norm(nx, ny, residual)
-
-initial_rms = rms
-
-solver()
+@time begin
+# call the solver function to calculate the numerical solution
+    solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+           initial_rms, maximum_iterations, tiny)
+end

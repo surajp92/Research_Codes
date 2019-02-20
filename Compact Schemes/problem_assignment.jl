@@ -32,7 +32,7 @@ function assign_problem(x_position, y_position, source, u_exact, flag_problem)
 #                   [4]- exponential
 #
 # Returns/ assigns
-#    source = source term on rhs of poisson equation ∇2ϕ = source
+#    source = source term on rhs of poisson equation ∇2ϕ = S
 #    u_exact = exact solution for different problems
 #-------------------------------------------------------------------------------
     if flag_problem == 1
