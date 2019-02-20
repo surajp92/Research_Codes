@@ -1,6 +1,8 @@
 include("gauss_seidel.jl")
 include("jacobi_solver.jl")
 include("steepest_descent.jl")
+include("conjugate_gradient.jl")
+
 
 
 function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -31,8 +33,9 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
                              initial_rms, maximum_iterations, tiny)
         elseif flag_solver == 4
-        
-            conjugate_gradient()
+        # call conjugate gradient solver
+            conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                               initial_rms, maximum_iterations, tiny)
         else
             biconjugate_gradient()
         end
