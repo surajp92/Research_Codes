@@ -1,4 +1,6 @@
 include("gauss_seidel.jl")
+include("jacobi_solver.jl")
+
 
 function solver()
     if flag_multigrid == 1
