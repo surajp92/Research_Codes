@@ -2,6 +2,8 @@ include("gauss_seidel.jl")
 include("jacobi_solver.jl")
 include("steepest_descent.jl")
 include("conjugate_gradient.jl")
+include("biconjugate_gradient_stab.jl")
+
 
 
 
@@ -37,7 +39,8 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
                                initial_rms, maximum_iterations, tiny)
         else
-            biconjugate_gradient()
+            biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
+                                      rms, initial_rms, maximum_iterations, tiny)
         end
     else
         multigrid_solver()

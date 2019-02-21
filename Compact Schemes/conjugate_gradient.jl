@@ -76,7 +76,6 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         # update the residual by removing some component of previous residual
         for j = 1:ny for i = 1:nx
-        #    bb = bb + residual[i,j]*residual[i,j]
             residual[i,j] = residual[i,j] - cc * del_p[i,j]
             aa = aa + residual[i,j]*residual[i,j]
         end end
