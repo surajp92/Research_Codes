@@ -120,7 +120,7 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
         # calculate numerical solution u^(k+1) = u^k + α^(k+1)*p^(k+1) + ω^(k+1)*s^k
         # calculate new residual r^(k+1) = s^k - ω^(k+1)*t^k
         for j = 2:ny for i = 2:nx
-            u_numerical[i,j] = u_numerical[i,j] + alfa * p[i,j] + omega * q[i,j]
+            u_numerical[i,j] = u_numerical[i,j] + alfa * p[i,j] + omega * s[i,j]
             residual[i,j] = s[i,j] - omega * t[i,j]
         end end
 
