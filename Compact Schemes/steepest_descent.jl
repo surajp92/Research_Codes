@@ -30,8 +30,8 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
+    # println(initial_rms)
 
-    factor          = -2.0/dx^2 - 2.0/dy^2
     del_residual    = zeros(Float64, nx+1, ny+1)
 
     # start calculation
@@ -39,10 +39,9 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
-            del_residual[i,j] = (residual[i+1,j] - 2*residual[i,j] +
-                            residual[i-1,j])/dx^2 +
-                            (residual[i,j+1] - 2*residual[i,j] +
-                            residual[i,j-1])/dy^2
+            del_residual[i,j] = (residual[i+1,j] - 2*residual[i,j] + residual[i-1,j])/(dx^2) +
+                            (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
+                             lambda*lambda*residual[i,j]
         end end
 
         aa = 0.0
@@ -55,17 +54,18 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
         cc = aa/(bb + tiny)
 
         # update the numerical solution by adding some component of residual
-        for j = 1:ny for i = 1:nx
+        for j = 2:ny for i = 2:nx
             u_numerical[i,j] = u_numerical[i,j] + cc * residual[i,j]
         end end
 
         # update the residual by removiing some component of previous residual
-        for j = 1:ny for i = 1:nx
+        for j = 2:ny for i = 2:nx
             residual[i,j] = residual[i,j] - cc * del_residual[i,j]
         end end
 
         # compute the l2norm of residual
         rms = compute_l2norm(nx, ny, residual)
+        # println(rms)
 
         println(iteration_count, " ", rms/initial_rms)
 

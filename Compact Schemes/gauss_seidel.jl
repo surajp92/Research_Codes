@@ -26,6 +26,7 @@ function gauss_seidel(dx, dy, nx, ny, residual, source, u_numerical, rms,
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
+    println(initial_rms)
 
     factor = -2.0/dx^2 - 2.0/dy^2 - lambda*lambda
     for iteration_count = 1:maximum_iterations
@@ -33,9 +34,9 @@ function gauss_seidel(dx, dy, nx, ny, residual, source, u_numerical, rms,
         # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
         # residual = f + λ^2u - ∇^2u
         for j = 2:ny for i = 2:nx
-            residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j] -
-                        (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/dx^2 -
-                        (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/dy^2
+            d2udx2 = (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/(dx^2)
+            d2udy2 = (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/(dy^2)
+            residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j] - d2udx2 - d2udy2
 
             u_numerical[i,j] = u_numerical[i,j] + omega * residual[i,j]/factor
         end end

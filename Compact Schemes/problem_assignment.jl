@@ -65,9 +65,9 @@ function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_pr
         c2 = -2.0*pi*pi
         for i = 1:nx+1 for j = 1:ny+1
 
-            source[i,j] = c2 * sin(pi * x_position[i]) * sin(pi * y_position[j])
+            source[i,j] = c2 * sin(pi*x_position[i]) * sin(pi*y_position[j])
 
-            u_exact[i,j] = sin(pi * x_position[i]) * sin(pi * y_position[j])
+            u_exact[i,j] = sin(pi*x_position[i]) * sin(pi*y_position[j])
 
         end end
     elseif flag_problem == 4
@@ -81,8 +81,8 @@ function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_pr
         end end
     else
     # Helmholtz function with k = 1, l = 1
-        k = 1.0
-        l = 1.0
+        k = 0.5
+        l = 0.5
         c = -(lambda^2 + (k*k + l*l)*pi^2)
         for i = 1:nx+1 for j = 1:ny+1
 

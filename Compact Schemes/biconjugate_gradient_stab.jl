@@ -77,8 +77,9 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
 
         # apply filtering operator q^(k+1) = ∇^2(p^(k+1))
         for j = 2:ny for i = 2:nx
-            q[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/dx^2 +
-                     (p[i,j+1] - 2*p[i,j] + p[i,j-1])/dy^2
+            q[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/(dx^2) +
+                     (p[i,j+1] - 2*p[i,j] + p[i,j-1])/(dy^2) -
+                     lambda*lambda*p[i,j]
         end end
         temp = 0.0
 
@@ -96,8 +97,9 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
 
         # apply filtering operator t^k = ∇^2(s^k)
         for j = 2:ny for i = 2:nx
-            t[i,j] = (s[i+1,j] - 2*s[i,j] + s[i-1,j])/dx^2 +
-                     (s[i,j+1] - 2*s[i,j] + s[i,j-1])/dy^2
+            t[i,j] = (s[i+1,j] - 2*s[i,j] + s[i-1,j])/(dx^2) +
+                     (s[i,j+1] - 2*s[i,j] + s[i,j-1])/(dy^2) -
+                     lambda*lambda*s[i,j]
         end end
 
         # clculate ω^(k+1) = <s^k, t^k>/<t^k, t^k>

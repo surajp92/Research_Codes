@@ -34,7 +34,7 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
-
+    println(initial_rms)
     # allocate the matric for direction and set the initial direction (conjugate vector)
     p = zeros(Float64, nx+1, ny+1)
 
@@ -43,7 +43,6 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
         p[i,j] = residual[i,j]
     end end
 
-    factor          = -2.0/dx^2 - 2.0/dy^2
     del_p    = zeros(Float64, nx+1, ny+1)
 
     # start calculation
@@ -51,8 +50,9 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
-            del_p[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/dx^2 +
-                         (p[i,j+1] - 2*p[i,j] + p[i,j-1])/dy^2
+            del_p[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/(dx^2) +
+                         (p[i,j+1] - 2*p[i,j] + p[i,j-1])/(dy^2) -
+                         lambda*lambda*residual[i,j]
         end end
 
         aa = 0.0
