@@ -1,4 +1,3 @@
-
 function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 #-------------------------------------------------------------------------------
 # Arguments:
@@ -13,7 +12,8 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
 # residual = f + λ^2u - ∇^2u
 
     # calculate constant coefficients
-    ee = ww = nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
+    ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
+    nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
     ne = nw = se = sw = 6/(50*dx*dx) + 6/(50*dy*dy)
     cc = 12/(5*dx*dx) + 12/(5*dy*dy)
     lambda2 = lambda*lambda
@@ -36,7 +36,7 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
         X = x_grid + x_corner
 
         # calculate residual
-        residual[i,j] = F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X 
+        residual[i,j] = F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X
     end end
 end
 

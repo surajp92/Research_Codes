@@ -1,7 +1,7 @@
 include("residualcalculation_compact.jl")
 
 function gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                       initial_rms, maximum_iterations, lambda)
+                       initial_rms, maximum_iterations, lambda, output)
 #-------------------------------------------------------------------------------
 # This function performs the jacobi iteration to compute the numerical
 # solution at every step. Numerical solution is updated after residual is
@@ -21,6 +21,11 @@ function gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms
 # 20    ϕ^(k+1) = ϕ^k + ωr^(k+1)
 # 30    calculate residual rms for ϕ^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+    # create text file for writing residual history
+    residual_plot = open("residual.txt", "w")
+    write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
+    count = 0.0
+
     compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
     rms = compute_l2norm_compact(nx, ny, residual)
@@ -68,10 +73,18 @@ function gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms
         # compute the l2norm of residual
         rms = compute_l2norm_compact(nx, ny, residual)
 
+        write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
+        count = iteration_count
+
         println(iteration_count, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
         end
     end
+    max_error = maximum(abs.(residual))
+    write(output, "L-2 Norm = ", string(rms), " \n");
+    write(output, "Maximum Norm = ", string(max_error), " \n");
+    write(output, "Iterations = ", string(count), " \n");
+    close(residual_plot)
 end

@@ -1,6 +1,6 @@
 64		! nx, ny
 4		!ipr;[1]moin,[2]harmonic(16),[3]harmonic(1),[4]exp [5]Helmholtz Equation
-1		!ips;[1]AD(Jacobi),[2]GS(SOR/SUR),[3]SD,[4]CG,[5]BiCGSTAB
+4		!ips;[1]AD(Jacobi),[2]GS(SOR/SUR),[3]SD,[4]CG,[5]BiCGSTAB
 1		!img;[1]Standard(1-level),[0]MG(optimal),[2]MG2,[5]MG5,[6]MG6,[7]MG7,[8]MG8,[9]MG9
 1		!iic;[1]start from zero,[2]start from random
 3		!irs;[1]inj,[2]half,[3]full 
@@ -12,4 +12,4 @@
 50000		!nI; max iteration
 1.0e-16		!tiny;
 0.0		!lambda
-2		!flag_order; [1] 2nd order, [2] 4th order
+1		!flag_order; [1] 2nd order, [2] 4th order

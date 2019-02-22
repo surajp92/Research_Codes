@@ -1,0 +1,3 @@
+L-2 Norm = 1.3618165407244531e-9 
+Maximum Norm = 5.237367581822514e-9 
+Iterations = 245 

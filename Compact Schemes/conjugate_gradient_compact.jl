@@ -1,6 +1,6 @@
-include("residualcalculation.jl")
+include("residualcalculation_compact.jl")
 
-function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
+function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
                       initial_rms, maximum_iterations, tiny, lambda, output)
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
@@ -34,12 +34,12 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
     count = 0.0
 
-    compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
+    compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
-    rms = compute_l2norm(nx, ny, residual)
+    rms = compute_l2norm_compact(nx, ny, residual)
 
     initial_rms = rms
-    println(initial_rms)
+
     # allocate the matric for direction and set the initial direction (conjugate vector)
     p = zeros(Float64, nx+1, ny+1)
 
@@ -50,14 +50,28 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
     del_p    = zeros(Float64, nx+1, ny+1)
 
+    # calculate constant coefficients
+    ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
+    nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
+    ne = nw = se = sw = 6/(50*dx*dx) + 6/(50*dy*dy)
+    cc = 12/(5*dx*dx) + 12/(5*dy*dy)
+    lambda2 = lambda*lambda
+
     # start calculation
     for iteration_count = 1:maximum_iterations
 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
-            del_p[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/(dx^2) +
-                         (p[i,j+1] - 2*p[i,j] + p[i,j-1])/(dy^2) -
-                         lambda*lambda*residual[i,j]
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            x_grid = ee*p[i+1,j] + ww*p[i-1,j] +
+                     nn*p[i,j+1] + ss*p[i,j-1]
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            x_corner = ne*p[i+1,j+1] + nw*p[i-1,j+1] +
+                       se*p[i+1,j-1] + sw*p[i-1,j-1]
+            X = x_grid + x_corner
+
+            del_p[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
+
         end end
 
         aa = 0.0
@@ -93,7 +107,7 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
         end end
 
         # compute the l2norm of residual
-        rms = compute_l2norm(nx, ny, residual)
+        rms = compute_l2norm_compact(nx, ny, residual)
 
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count

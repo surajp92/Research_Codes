@@ -4,6 +4,7 @@ include("gauss_seidel.jl")
 include("solver.jl")
 
 using CPUTime
+using Printf
 
 # read data from text file for input parameters
 file_input = open("input.txt")
@@ -38,6 +39,19 @@ tiny                    = Float64(input_parameters[13])
 lambda                  = Float64(input_parameters[14])
 flag_order              = Int32(input_parameters[15])
 k = 1
+
+# create output file for L2-norm
+output = open("output.txt", "w");
+
+# create text file for initial and final field
+field_initial = open("field_initial.txt", "w");
+field_final = open("field_final.txt", "w");
+
+write(field_initial, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\" \n")
+write(field_initial, "zone f=point i = ", string(nx), ",j = ", string(ny), "\n")
+
+write(field_final, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\", \"e\" \n")
+write(field_final, "zone f=point i = ", string(nx), ",j = ", string(ny), "\n")
 
 # Assign the domain size based on initial problem
     if flag_problem == 1
@@ -84,8 +98,23 @@ boundary_condition(u_numerical, u_exact, nx, ny)
 residual         = zeros(Float64, nx+1, ny+1)
 initial_rms      = 0.0
 rms              = 0.0
+for i = 1:nx+1 for j = 1:ny+1
+    write(field_initial, @sprintf("%.16f",x_position[i])," ", @sprintf("%.16f", y_position[j]), " ",
+          @sprintf("%.16f", source[i,j])," ", @sprintf("%.16f", u_numerical[i,j])," ", @sprintf("%.16f", u_exact[i,j]), " \n")
+end end
+
 @time begin
 # call the solver function to calculate the numerical solution
     solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-           initial_rms, maximum_iterations, tiny, lambda)
+           initial_rms, maximum_iterations, tiny, lambda, output)
+
 end
+for i = 1:nx+1 for j = 1:ny+1
+    write(field_final, @sprintf("%.16f",x_position[i])," ", @sprintf("%.16f", y_position[j]), " ",
+          @sprintf("%.16f", source[i,j])," ", @sprintf("%.16f", u_numerical[i,j])," ",
+          @sprintf("%.16f", u_exact[i,j])," ", @sprintf("%.16f",(u_numerical[i,j]-u_exact[i,j]))," \n")
+end end
+
+close(field_initial)
+close(field_final)
+close(output);

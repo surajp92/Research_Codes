@@ -1,7 +1,7 @@
 include("residualcalculation.jl")
 
 function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
-                                   rms, initial_rms, maximum_iterations, tiny, lambda)
+                                   rms, initial_rms, maximum_iterations, tiny, lambda, output)
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
@@ -31,6 +31,11 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
 # 120   r^(k+1) = s^k - ω^(k+1)*t^k........................vector
 # 130   calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+    # create text file for writing residual history
+    residual_plot = open("residual.txt", "w")
+    write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
+    count = 0.0
+
     compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
     rms = compute_l2norm(nx, ny, residual)
@@ -123,10 +128,18 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
         # compute the l2norm of residual
         rms = compute_l2norm(nx, ny, residual)
 
+        write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
+        count = iteration_count
+
         println(iteration_count, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
         end
     end
+    max_error = maximum(abs.(residual))
+    write(output, "L-2 Norm = ", string(rms), " \n");
+    write(output, "Maximum Norm = ", string(max_error), " \n");
+    write(output, "Iterations = ", string(count), " \n");
+    close(residual_plot)
 end

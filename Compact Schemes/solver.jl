@@ -5,10 +5,14 @@ include("conjugate_gradient.jl")
 include("biconjugate_gradient_stab.jl")
 include("jacobi_solver_compact.jl")
 include("gauss_seidel_compact.jl")
+include("steepest_descent_compact.jl")
+include("conjugate_gradient_compact.jl")
+
+
 
 
 function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                initial_rms, maximum_iterations, tiny, lambda)
+                initial_rms, maximum_iterations, tiny, lambda, output)
 #-------------------------------------------------------------------------------
 # This function selects the iterative solver based on the flag_solver
 # Arguments:
@@ -25,44 +29,44 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         if flag_solver == 1
         # call jacobi solver
             jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                          initial_rms, maximum_iterations, lambda)
+                          initial_rms, maximum_iterations, lambda, output)
         elseif flag_solver == 2
         # call gauss seidel solver
             gauss_seidel(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                         initial_rms, maximum_iterations, lambda)
+                         initial_rms, maximum_iterations, lambda, output)
         elseif flag_solver == 3
         # call steepest descent solver
             steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                             initial_rms, maximum_iterations, tiny, lambda)
+                             initial_rms, maximum_iterations, tiny, lambda, output)
         elseif flag_solver == 4
         # call conjugate gradient solver
             conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                               initial_rms, maximum_iterations, tiny, lambda)
+                               initial_rms, maximum_iterations, tiny, lambda, output)
         else
             biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
-                                      rms, initial_rms, maximum_iterations, tiny, lambda)
+                                      rms, initial_rms, maximum_iterations, tiny, lambda, output)
         end
 
     elseif flag_multigrid == 1 && flag_order == 2
         if flag_solver == 1
         # call jacobi solver
             jacobi_solver_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                          initial_rms, maximum_iterations, lambda)
+                          initial_rms, maximum_iterations, lambda, output)
         elseif flag_solver == 2
         # call gauss seidel solver
             gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                         initial_rms, maximum_iterations, lambda)
+                         initial_rms, maximum_iterations, lambda, output)
         elseif flag_solver == 3
         # call steepest descent solver
             steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                             initial_rms, maximum_iterations, tiny, lambda)
+                             initial_rms, maximum_iterations, tiny, lambda, output)
         elseif flag_solver == 4
         # call conjugate gradient solver
             conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                               initial_rms, maximum_iterations, tiny, lambda)
+                               initial_rms, maximum_iterations, tiny, lambda, output)
         else
             biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_numerical,
-                                      rms, initial_rms, maximum_iterations, tiny, lambda)
+                                      rms, initial_rms, maximum_iterations, tiny, lambda, output)
         end
 
     else
