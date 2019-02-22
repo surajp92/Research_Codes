@@ -3,8 +3,8 @@ include("jacobi_solver.jl")
 include("steepest_descent.jl")
 include("conjugate_gradient.jl")
 include("biconjugate_gradient_stab.jl")
-
-
+include("jacobi_solver_compact.jl")
+include("gauss_seidel_compact.jl")
 
 
 function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -21,7 +21,7 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
 #   maximum_iterations = maximum number of iterations
 #   tiny = very small number to avoid division by zero
 #-------------------------------------------------------------------------------
-    if flag_multigrid == 1
+    if flag_multigrid == 1 && flag_order == 1
         if flag_solver == 1
         # call jacobi solver
             jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -42,6 +42,29 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
                                       rms, initial_rms, maximum_iterations, tiny, lambda)
         end
+
+    elseif flag_multigrid == 1 && flag_order == 2
+        if flag_solver == 1
+        # call jacobi solver
+            jacobi_solver_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                          initial_rms, maximum_iterations, lambda)
+        elseif flag_solver == 2
+        # call gauss seidel solver
+            gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                         initial_rms, maximum_iterations, lambda)
+        elseif flag_solver == 3
+        # call steepest descent solver
+            steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                             initial_rms, maximum_iterations, tiny, lambda)
+        elseif flag_solver == 4
+        # call conjugate gradient solver
+            conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                               initial_rms, maximum_iterations, tiny, lambda)
+        else
+            biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_numerical,
+                                      rms, initial_rms, maximum_iterations, tiny, lambda)
+        end
+
     else
         multigrid_solver()
     end

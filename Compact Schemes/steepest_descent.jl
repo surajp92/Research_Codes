@@ -39,6 +39,7 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
+
             del_residual[i,j] = (residual[i+1,j] - 2*residual[i,j] + residual[i-1,j])/(dx^2) +
                             (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
                              lambda*lambda*residual[i,j]

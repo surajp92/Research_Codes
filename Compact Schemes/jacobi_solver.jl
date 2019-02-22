@@ -27,7 +27,7 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
     initial_rms = rms
 
-    factor = -2.0/dx^2 - 2.0/dy^2 #- lambda*lambda
+    factor = -2.0/dx^2 - 2.0/dy^2 - lambda*lambda
     for iteration_count = 1:maximum_iterations
 
         # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)

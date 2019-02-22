@@ -8,7 +8,7 @@ using CPUTime
 # read data from text file for input parameters
 file_input = open("input.txt")
 input_lines = readlines(file_input)
-input_parameters = Array{Float64}(undef, 14)
+input_parameters = Array{Float64}(undef, 15)
 counter = 1
 for line in input_lines
 #    m = match(r"^([0-9]+)", line)
@@ -36,6 +36,7 @@ relaxation_coarsest     = Int32(input_parameters[11])
 maximum_iterations      = Int32(input_parameters[12])
 tiny                    = Float64(input_parameters[13])
 lambda                  = Float64(input_parameters[14])
+flag_order              = Int32(input_parameters[15])
 k = 1
 
 # Assign the domain size based on initial problem
