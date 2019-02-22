@@ -1,7 +1,7 @@
 include("residualcalculation.jl")
 
 function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                      initial_rms, maximum_iterations, tiny)
+                      initial_rms, maximum_iterations, tiny, lambda)
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
@@ -29,7 +29,7 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
 # 80    p^(k+1) = r^(k+1) - cc*p^k
 # 30    calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
-    compute_residual(nx, ny, dx, dy, source, u_numerical, residual)
+    compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
     rms = compute_l2norm(nx, ny, residual)
 

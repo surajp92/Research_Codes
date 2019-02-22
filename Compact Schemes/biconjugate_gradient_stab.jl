@@ -1,7 +1,7 @@
 include("residualcalculation.jl")
 
 function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
-                                   rms, initial_rms, maximum_iterations, tiny)
+                                   rms, initial_rms, maximum_iterations, tiny, lambda)
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
@@ -31,7 +31,7 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
 # 120   r^(k+1) = s^k - ω^(k+1)*t^k........................vector
 # 130   calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
-    compute_residual(nx, ny, dx, dy, source, u_numerical, residual)
+    compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
     rms = compute_l2norm(nx, ny, residual)
 
@@ -61,7 +61,7 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
 
         # calculate ρ^(k+1)
         rho_new = 0.0
-        # rho_new = sum(f_initial.*residual)
+
         for j = 2:ny for i = 2:nx
             rho_new = rho_new + f_initial[i,j]*residual[i,j]
         end end
@@ -71,7 +71,6 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
         rho = rho_new
 
         # calculate p^(k+1) = r^k + β^k(p^k - ω^k*q^k)
-        # p = residual + beta * (p - omega * q)
         for j = 2:ny for i = 2:nx
             p[i,j] = residual[i,j] + beta * (p[i,j] - omega * q[i,j])
         end end

@@ -8,7 +8,7 @@ using CPUTime
 # read data from text file for input parameters
 file_input = open("input.txt")
 input_lines = readlines(file_input)
-input_parameters = Array{Float64}(undef, 13)
+input_parameters = Array{Float64}(undef, 14)
 counter = 1
 for line in input_lines
 #    m = match(r"^([0-9]+)", line)
@@ -35,6 +35,7 @@ relaxation_c2f          = Int32(input_parameters[10])
 relaxation_coarsest     = Int32(input_parameters[11])
 maximum_iterations      = Int32(input_parameters[12])
 tiny                    = Float64(input_parameters[13])
+lambda                  = Float64(input_parameters[14])
 k = 1
 
 # Assign the domain size based on initial problem
@@ -69,7 +70,8 @@ calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
                         x_right, y_top, y_bottom)
 
 # calculate the source term and exact solution based on the problem flag
-assign_problem(x_position, y_position, source, u_exact, flag_problem)
+assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_problem,
+               lambda)
 
 # assign initial condition (zero or random) based on start flag
 initial_condition(u_numerical, nx, ny, flag_start)
@@ -84,5 +86,5 @@ rms              = 0.0
 @time begin
 # call the solver function to calculate the numerical solution
     solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-           initial_rms, maximum_iterations, tiny)
+           initial_rms, maximum_iterations, tiny, lambda)
 end

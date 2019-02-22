@@ -23,7 +23,8 @@ function calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
     end
 end
 
-function assign_problem(x_position, y_position, source, u_exact, flag_problem)
+function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_problem,
+                        lambda)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    x_position = an array with x-coordinates of each grid location
@@ -69,7 +70,7 @@ function assign_problem(x_position, y_position, source, u_exact, flag_problem)
             u_exact[i,j] = sin(pi * x_position[i]) * sin(pi * y_position[j])
 
         end end
-    else
+    elseif flag_problem == 4
     # exponential function
         for i = 1:nx+1 for j = 1:ny+1
 
@@ -77,6 +78,17 @@ function assign_problem(x_position, y_position, source, u_exact, flag_problem)
                           exp(x_position[i] * y_position[j])
 
             u_exact[i,j] = exp(x_position[i] * y_position[j])
+        end end
+    else
+    # Helmholtz function with k = 1, l = 1
+        k = 1.0
+        l = 1.0
+        c = -(lambda^2 + (k*k + l*l)*pi^2)
+        for i = 1:nx+1 for j = 1:ny+1
+
+            source[i,j] = c*sin(pi*k*x_position[i])*sin(pi*l*y_position[j])
+
+            u_exact[i,j] = sin(pi*k*x_position[i]) * sin(pi*l*y_position[j])
         end end
     end
 end
