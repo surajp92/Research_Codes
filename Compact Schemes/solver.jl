@@ -7,6 +7,7 @@ include("jacobi_solver_compact.jl")
 include("gauss_seidel_compact.jl")
 include("steepest_descent_compact.jl")
 include("conjugate_gradient_compact.jl")
+include("biconjugate_gradient_stab_compact.jl")
 
 
 
