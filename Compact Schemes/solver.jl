@@ -73,6 +73,9 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         end
 
     elseif flag_multigrid != 1 && flag_order == 1
+        # @enter multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+        #                 initial_rms, maximum_iterations, tiny, lambda, output)
+
         multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                         initial_rms, maximum_iterations, tiny, lambda, output)
     end

@@ -5,7 +5,7 @@ include("mg_operation.jl")
 
 
 #-------------------------Multigrid Solver with 2 levels------------------------
-#
+# this function executes multigrid framework with two levels
 #
 #-------------------------------------------------------------------------------
 function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -48,11 +48,15 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
     for iteration_count = 1:maximum_iterations
         # call relaxation on fine grid and compute the numerical solution
         # for fixed number of iterations
+        # @enter relax_multigrid(level_nx[1], level_ny[1], dx, dy, source, u_numerical, lambda,
+        #                 relaxation_f2c)
+
         relax_multigrid(level_nx[1], level_ny[1], dx, dy, source, u_numerical, lambda,
-                        relaxation_f2c)
+                        tiny, relaxation_f2c)
 
         # check for convergence only for finest grid
         # compute the residual and L2 norm
+
         compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
         # compute the l2norm of residual
@@ -61,18 +65,20 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
                 break
         end
 
         # restrict the residual from fine level to coarse level
+        # @enter restriction(level_nx[1], level_ny[1], level_nx[2], level_ny[2], residual, source_coarse)
+
         restriction(level_nx[1], level_ny[1], level_nx[2], level_ny[2], residual, source_coarse)
 
         # solve on the coarsest level and relax V3 times
         relax_multigrid(level_nx[2], level_ny[2], level_dx[2], level_dy[2],
-                        source_coarse, u_numerical_coarse, lambda, relaxation_coarsest)
+                        source_coarse, u_numerical_coarse, lambda, tiny, relaxation_coarsest)
 
         # prolongate solution from coarse level to fine level
         prolongation(level_nx[2], level_ny[2], level_nx[1], level_ny[1], u_numerical_coarse, prol_fine)
@@ -84,9 +90,6 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         # relax v2 times
         relax_multigrid(level_nx[1], level_ny[1], dx, dy, source, u_numerical, lambda,
-                        relaxation_c2f)
+                        tiny, relaxation_c2f)
     end
-
-
-
 end

@@ -5,6 +5,7 @@ include("solver.jl")
 
 using CPUTime
 using Printf
+using ASTInterpreter2
 
 # read data from text file for input parameters
 file_input = open("input.txt")
@@ -91,6 +92,8 @@ assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_problem,
 # assign initial condition (zero or random) based on start flag
 initial_condition(u_numerical, nx, ny, flag_start)
 
+
+
 # assign boundary conditions (exact solution) for the domain
 boundary_condition(u_numerical, u_exact, nx, ny)
 
@@ -103,6 +106,9 @@ for j = 1:ny+1 for i = 1:nx+1
           @sprintf("%.16f", source[i,j])," ", @sprintf("%.16f", u_numerical[i,j])," ",
           @sprintf("%.16f", u_exact[i,j]), " \n")
 end end
+
+# @enter solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+#       initial_rms, maximum_iterations, tiny, lambda, output, flag_solver)
 
 @time begin
 # call the solver function to calculate the numerical solution
