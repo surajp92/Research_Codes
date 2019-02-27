@@ -1,8 +1,6 @@
 include("residualcalculation.jl")
 
-function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                       initial_rms, maximum_iterations, lambda, output)
-#-------------------------------------------------------------------------------
+#-------------------------Jacobi Solver-----------------------------------------
 # This function performs the jacobi iteration to compute the numerical
 # solution at every step. Numerical solution is updated after residual is
 # calculated over the whole domain
@@ -21,6 +19,9 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
 # 20    ϕ^(k+1) = ϕ^k + ωr^(k+1)
 # 30    calculate residual rms for ϕ^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                       initial_rms, maximum_iterations, lambda, output)
+
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -36,13 +37,13 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     for iteration_count = 1:maximum_iterations
 
         # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
-        for i = 2:nx for j = 2:ny
+        for j = 2:ny for i = 2:nx
             residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j]-
                         (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/dx^2 -
                         (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/dy^2
 
         end end
-        for i = 2:nx for j = 2:ny
+        for j = 2:ny for i = 2:nx
             u_numerical[i,j] = u_numerical[i,j] + omega * residual[i,j]/factor
         end end
 
@@ -56,7 +57,6 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         println(iteration_count, " ", rms/initial_rms)
 
-
         if (rms/initial_rms) <= tolerance
             break
         end
@@ -66,4 +66,27 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     write(output, "Maximum Norm = ", string(max_error), " \n");
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
+end
+
+
+#-------------------------Jacobi Solver Multigrid-------------------------------
+function jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+
+    temp_residual = zeros(Float64, nx+1, ny+1)
+    factor = -2.0/dx^2 - 2.0/dy^2 - lambda*lambda
+
+    for iteration_count = 1:V
+
+        # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
+        for j = 2:ny for i = 2:nx
+            temp_residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j]-
+                        (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/dx^2 -
+                        (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/dy^2
+
+        end end
+
+        for i = 2:nx for j = 2:ny
+            u_numerical[i,j] = u_numerical[i,j] + omega * temp_residual[i,j]/factor
+        end end
+    end
 end

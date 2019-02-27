@@ -8,13 +8,11 @@ include("gauss_seidel_compact.jl")
 include("steepest_descent_compact.jl")
 include("conjugate_gradient_compact.jl")
 include("biconjugate_gradient_stab_compact.jl")
+include("multigrid_solver.jl")
 
 
 
-
-function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                initial_rms, maximum_iterations, tiny, lambda, output)
-#-------------------------------------------------------------------------------
+#-------------------------Solver function--------------------------------------
 # This function selects the iterative solver based on the flag_solver
 # Arguments:
 #   nx, ny = number of grid in x and y direction
@@ -26,6 +24,10 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
 #   maximum_iterations = maximum number of iterations
 #   tiny = very small number to avoid division by zero
 #-------------------------------------------------------------------------------
+
+function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                initial_rms, maximum_iterations, tiny, lambda, output, flag_solver)
+
     if flag_multigrid == 1 && flag_order == 1
         if flag_solver == 1
         # call jacobi solver
@@ -70,7 +72,8 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                                       rms, initial_rms, maximum_iterations, tiny, lambda, output)
         end
 
-    else
-        multigrid_solver()
+    elseif flag_multigrid != 1 && flag_order == 1
+        multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                        initial_rms, maximum_iterations, tiny, lambda, output)
     end
 end

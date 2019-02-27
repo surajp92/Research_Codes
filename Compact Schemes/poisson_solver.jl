@@ -98,18 +98,19 @@ boundary_condition(u_numerical, u_exact, nx, ny)
 residual         = zeros(Float64, nx+1, ny+1)
 initial_rms      = 0.0
 rms              = 0.0
-for i = 1:nx+1 for j = 1:ny+1
+for j = 1:ny+1 for i = 1:nx+1
     write(field_initial, @sprintf("%.16f",x_position[i])," ", @sprintf("%.16f", y_position[j]), " ",
-          @sprintf("%.16f", source[i,j])," ", @sprintf("%.16f", u_numerical[i,j])," ", @sprintf("%.16f", u_exact[i,j]), " \n")
+          @sprintf("%.16f", source[i,j])," ", @sprintf("%.16f", u_numerical[i,j])," ",
+          @sprintf("%.16f", u_exact[i,j]), " \n")
 end end
 
 @time begin
 # call the solver function to calculate the numerical solution
     solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-           initial_rms, maximum_iterations, tiny, lambda, output)
+           initial_rms, maximum_iterations, tiny, lambda, output, flag_solver)
 
 end
-for i = 1:nx+1 for j = 1:ny+1
+for j = 1:ny+1 for i = 1:nx+1
     write(field_final, @sprintf("%.16f",x_position[i])," ", @sprintf("%.16f", y_position[j]), " ",
           @sprintf("%.16f", source[i,j])," ", @sprintf("%.16f", u_numerical[i,j])," ",
           @sprintf("%.16f", u_exact[i,j])," ", @sprintf("%.16f",(u_numerical[i,j]-u_exact[i,j]))," \n")

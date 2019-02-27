@@ -11,7 +11,7 @@ function compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 #-------------------------------------------------------------------------------
 
 # residual = f + λ^2u - ∇^2u
-    for i = 2:nx for j = 2:ny
+    for j = 2:ny for i = 2:nx
         d2udx2 = (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/(dx^2)
         d2udy2 = (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/(dy^2)
         residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j] - d2udx2 - d2udy2
@@ -29,7 +29,7 @@ function compute_l2norm(nx, ny, residual)
 #-------------------------------------------------------------------------------
     rms = 0.0
     # println(residual)
-    for i = 2:nx for j = 2:ny
+    for j = 2:ny for i = 2:nx
         rms = rms + residual[i,j]^2
     end end
     # println(rms)
