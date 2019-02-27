@@ -78,7 +78,7 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
         prolongation(level_nx[2], level_ny[2], level_nx[1], level_ny[1], u_numerical_coarse, prol_fine)
 
         # correct the solution on fine level
-        for j = 2:level_nx[1]-1 for i = 2:level_ny[1]-1
+        for j = 2:level_nx[1] for i = 2:level_ny[1]
                 u_numerical[i,j] = u_numerical[i,j] + prol_fine[i,j]
         end end
 

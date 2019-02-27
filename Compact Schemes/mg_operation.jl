@@ -34,7 +34,7 @@ function restriction(nx_fine, ny_fine, nx_coarse, ny_coarse, residual, source_co
         # left boundary j = 1
         source_coarse[i,1] = residual[2*i-1,1]
         # right boundary nx_coarse+1
-        source_coarse[nx_coarse+1] = residual[2*i-1, ny_fine+1]
+        source_coarse[i,nx_coarse+1] = residual[2*i-1, ny_fine+1]
     end
 end
 
@@ -72,6 +72,6 @@ function prolongation(nx_coarse, ny_coarse, nx_fine, ny_fine, u_numerical_coarse
         #bottom boundary i = 1
         prol_fine[1,2*j-1] = u_numerical_coarse[1,j]
         # top boundary i =  ny_fine+1
-        prol_fine[ny_fine+1,2*j-1] = u_numerical_coarse[nx_coarse+1,j]
+        prol_fine[ny_fine+1,2*j-1] = u_numerical_coarse[ny_coarse+1,j]
     end
 end
