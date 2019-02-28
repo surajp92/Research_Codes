@@ -55,7 +55,7 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
@@ -70,23 +70,32 @@ end
 
 
 #-------------------------Jacobi Solver Multigrid-------------------------------
+# This function performs the iteration of Jacobi solver for fixed numer V
+# Arguments:
+#   nx, ny = number of grid in x and y direction
+#   dx, dy = grid spacing in x and y direction
+#   source = source term on rhs of poisson equation ∇2ϕ = S
+#   (error restricted from fine levels for coarse levels)
+#   u_numerical = numerical solution for different problems
+#
+#-------------------------------------------------------------------------------
 function jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
 
-    temp_residual = zeros(Float64, nx+1, ny+1)
+    residual = zeros(Float64, nx+1, ny+1)
     factor = -2.0/dx^2 - 2.0/dy^2 - lambda*lambda
 
     for iteration_count = 1:V
-
         # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
         for j = 2:nx for i = 2:ny
-            temp_residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j]-
+            residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j]-
                         (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/dx^2 -
                         (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/dy^2
-
         end end
 
         for j = 2:nx for i = 2:ny
-            u_numerical[i,j] = u_numerical[i,j] + omega * temp_residual[i,j]/factor
+            u_numerical[i,j] = u_numerical[i,j] + omega * residual[i,j]/factor
         end end
     end
+    # println("Relaxation")
+    # for i = 1:nx+1    println(u_numerical[i,:], "\n") end
 end

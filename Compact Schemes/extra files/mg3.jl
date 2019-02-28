@@ -6,7 +6,7 @@ include("mg_operation.jl")
 # this function executes multigrid framework with two levels
 #
 #-------------------------------------------------------------------------------
-function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+function mg3(dx, dy, nx, ny, residual, source, u_numerical, rms,
             initial_rms, maximum_iterations, tiny, lambda, output, n_level)
 
     # create text file for writing residual history
@@ -45,13 +45,13 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     level_dy[1] = dy
     # calculate mesh details for coarse levels and allocate matirx for
     # numerical solution and error restreicted from upper level
-
+    println(level_nx)
     for i = 2:n_level
         level_nx[i] = Int64(level_nx[i-1]/2)
         level_ny[i] = Int64(level_ny[i-1]/2)
         level_dx[i] = level_dx[i-1]*2
         level_dy[i] = level_dy[i-1]*2
-
+        println(i, " ", level_nx)
         # allocate matrix for storage at coarse levels
         source_coarse = zeros(Float64, level_nx[i]+1, level_ny[i]+1)
         u_numerical_coarse = zeros(Float64, level_nx[i]+1, level_ny[i]+1)
@@ -65,7 +65,7 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     prol_fine = zeros(Float64, level_nx[1]+1, level_ny[1]+1)
     # temporaty residual which is restricted to coarse mesh error
     # the size keeps on changing
-    temp_residual = zeros(Float64, level_nx[1]+1, level_ny[1]+1)
+
     # start main iteration loop
     for iteration_count = 1:maximum_iterations
         # call relaxation on fine grid and compute the numerical solution
@@ -75,15 +75,15 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         relax_multigrid(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
                         source_multigrid[1], u_multigrid[1], lambda, tiny, relaxation_f2c)
+
         # println(u_multigrid[1])
         # check for convergence only for finest grid
         # compute the residual and L2 norm
 
-        compute_residual(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
-                        source_multigrid[1], u_multigrid[1], residual, lambda)
+        compute_residual(nx, ny, dx, dy, source_multigrid[1], u_multigrid[1], residual, lambda)
 
         # compute the l2norm of residual
-        rms = compute_l2norm(level_nx[1], level_ny[1], residual)
+        rms = compute_l2norm(nx, ny, residual)
         # write results only for finest residual
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
@@ -94,53 +94,64 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                 break
         end
         # from second level to coarsest level
-        for k = 2:n_level
-            if k == 2
-                # for second level temporary residual is taken from fine mesh level
-                temp_residual = residual
-            else
-                # from third level onwards residual is computed for (k-1) level
-                # which will be restricted to kth lvel error
-                temp_residual = zeros(Float64, level_nx[k-1]+1, level_ny[k-1]+1)
-                compute_residual(level_nx[k-1], level_ny[k-1], level_dx[k-1], level_dy[k-1],
-                                 source_multigrid[k-1], u_multigrid[k-1], temp_residual, lambda)
-            end
+
+        # for second level temporary residual is taken from fine mesh level
+            temp_residual = zeros(Float64, level_nx[1]+1, level_ny[1]+1)
+            temp_residual = residual
+
             # restrict reisudal from (k-1)th level to kth level
-            restriction(level_nx[k-1], level_ny[k-1], level_nx[k], level_ny[k], temp_residual,
-                        source_multigrid[k])
+            restriction(level_nx[1], level_ny[1], level_nx[2], level_ny[2], temp_residual,
+                        source_multigrid[2])
 
             # solution at kth level to zero
-            u_multigrid[k][:,:] = zeros(level_nx[k]+1, level_ny[k]+1)
+            u_multigrid[2][:,:] = zeros(level_nx[2]+1, level_ny[2]+1)
 
-            # solve (∇^-λ^2)ϕ = ϵ on coarse grid (kthe level)
-            if k < n_level
-                relax_multigrid(level_nx[k], level_ny[k], level_dx[k], level_dy[k],
-                            source_multigrid[k], u_multigrid[k], lambda, tiny, relaxation_f2c)
-            elseif k == n_level
-                relax_multigrid(level_nx[k], level_ny[k], level_dx[k], level_dy[k],
-                            source_multigrid[k], u_multigrid[k], lambda, tiny, relaxation_coarsest)
-            end
-            # println(u_multigrid[k])
-        end
+            relax_multigrid(level_nx[2], level_ny[2], level_dx[2], level_dy[2],
+                        source_multigrid[2], u_multigrid[2], lambda, tiny, relaxation_f2c)
+            # println(u_multigrid[2])
 
-        for k = n_level:-1:2
-            # temporary matrix for correction storage at (k-1) th level
-            # solution prolongated from kth level to (k-1)th level
-            prol_fine = zeros(Float64, level_nx[k-1]+1, level_ny[k-1]+1)
+            temp_residual = zeros(Float64, level_nx[2]+1, level_ny[2]+1)
+            compute_residual(level_nx[2], level_ny[2], level_dx[2], level_dy[2],
+                             source_multigrid[2], u_multigrid[2], temp_residual, lambda)
 
-            # prolongate solution from (k)th level to (k-1)th level
-            prolongation(level_nx[k], level_ny[k], level_nx[k-1], level_ny[k-1],
-                         u_multigrid[k], prol_fine)
+            restriction(level_nx[2], level_ny[2], level_nx[3], level_ny[3], temp_residual,
+                        source_multigrid[3])
 
-            for j = 2:level_nx[k-1] for i = 2:level_ny[k-1]
-                    u_multigrid[k-1][i,j] = u_multigrid[k-1][i,j] + prol_fine[i,j]
+            # solution at kth level to zero
+            u_multigrid[3][:,:] = zeros(level_nx[3]+1, level_ny[3]+1)
+
+            relax_multigrid(level_nx[3], level_ny[3], level_dx[3], level_dy[3],
+                            source_multigrid[3], u_multigrid[3], lambda, tiny, relaxation_coarsest)
+
+            # println(u_multigrid[3])
+
+            prol_fine = zeros(Float64, level_nx[2]+1, level_ny[2]+1)
+            prolongation(level_nx[3], level_ny[3], level_nx[2], level_ny[2],
+                         u_multigrid[3], prol_fine)
+
+            # println(prol_fine)
+            for j = 2:level_nx[2] for i = 2:level_ny[2]
+                    u_multigrid[2][i,j] = u_multigrid[2][i,j] + prol_fine[i,j]
+            end end
+            # println("check")
+            # println(u_multigrid[2])
+            # println(source_multigrid[2])
+
+            relax_multigrid(level_nx[2], level_ny[2], level_dx[2], level_dy[2],
+                            source_multigrid[2], u_multigrid[2], lambda, tiny, relaxation_c2f)
+
+            # println(u_multigrid[2])
+            prol_fine = zeros(Float64, level_nx[1]+1, level_ny[1]+1)
+            prolongation(level_nx[2], level_ny[2], level_nx[1], level_ny[1],
+                         u_multigrid[2], prol_fine)
+
+            for j = 2:level_nx[1] for i = 2:level_ny[1]
+                    u_multigrid[1][i,j] = u_multigrid[1][i,j] + prol_fine[i,j]
             end end
 
-            relax_multigrid(level_nx[k-1], level_ny[k-1], level_dx[k-1], level_dy[k-1],
-                            source_multigrid[k-1], u_multigrid[k-1], lambda, tiny, relaxation_c2f)
-
-            #println(u_multigrid[k-1])
-        end
+            relax_multigrid(level_nx[1], level_ny[1], level_dx[1], level_dy[1], source_multigrid[1],
+                            u_multigrid[1], lambda, tiny, relaxation_c2f)
+            # println(u_multigrid[1])
     end
     u_numerical = u_multigrid[1]
 end

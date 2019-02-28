@@ -1,4 +1,6 @@
 #------------------------- Restriction -----------------------------------------
+# This function restricts residual from fine level to error on coarse levels
+# can be implemented using trapezoidal function, direct injection, simpsons rule
 # Arguments:
 # nx_fine, ny_fine = number of grid points on fine level
 # nx_coarse, ny_coarse = number of grid points on coarse level
@@ -7,6 +9,7 @@
 #-------------------------------------------------------------------------------
 function restriction(nx_fine, ny_fine, nx_coarse, ny_coarse, residual, source_coarse)
 
+# trapezoidal function
     for j = 2:ny_coarse for i = 2:nx_coarse
         # grid index for fine grid for the same coarse point
         center = 4.0*residual[2*i-1, 2*j-1]
@@ -18,7 +21,6 @@ function restriction(nx_fine, ny_fine, nx_coarse, ny_coarse, residual, source_co
                       residual[2*i-1-1, 2*j-1+1] + residual[2*i-1-1, 2*j-1-1])
         # restriction using trapezoidal rule
         source_coarse[i,j] = (center + grid + corner)/16.0
-
     end end
 
     # restriction for boundary points bottom and top
@@ -36,9 +38,13 @@ function restriction(nx_fine, ny_fine, nx_coarse, ny_coarse, residual, source_co
         # right boundary nx_coarse+1
         source_coarse[i,nx_coarse+1] = residual[2*i-1, ny_fine+1]
     end
+    # println("error coarse")
+    # println(source_coarse)
 end
 
 #-------------------------- Prolongation ---------------------------------------
+# This function prolongates the error correction from coarse level to fine level
+# implemented using bilinear operator
 # Arguments:
 # nx_coarse, ny_coarse = number of grid points on coarse level
 # nx_fine, ny_fine = number of grid points on fine level
@@ -47,11 +53,12 @@ end
 #-------------------------------------------------------------------------------
 function prolongation(nx_coarse, ny_coarse, nx_fine, ny_fine, u_numerical_coarse, prol_fine)
 
+# bilinear operator
     for j = 1:ny_coarse for i = 1:nx_coarse
         # direct injection at center point
         prol_fine[2*i-1, 2*j-1] = u_numerical_coarse[i,j]
         # east neighnour on fine grid corresponding to coarse grid point
-        prol_fine[2*i-1, 2*j-1+1] = 0.5*(u_numerical_coarse[i,j] + u_numerical[i,j+1])
+        prol_fine[2*i-1, 2*j-1+1] = 0.5*(u_numerical_coarse[i,j] + u_numerical_coarse[i,j+1])
         # north neighbout on fine grid corresponding to coarse grid point
         prol_fine[2*i-1+1, 2*j-1] = 0.5*(u_numerical_coarse[i,j] + u_numerical_coarse[i+1,j])
         # NE neighbour on fine grid corresponding to coarse grid point
@@ -74,4 +81,6 @@ function prolongation(nx_coarse, ny_coarse, nx_fine, ny_fine, u_numerical_coarse
         # top boundary i =  ny_fine+1
         prol_fine[ny_fine+1,2*j-1] = u_numerical_coarse[ny_coarse+1,j]
     end
+    # println("correction fine")
+    # println(prol_fine)
 end

@@ -1,9 +1,7 @@
 include("residualcalculation.jl")
 
-function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                      initial_rms, maximum_iterations, tiny, lambda, output)
-#-------------------------------------------------------------------------------
-# This function performs the gauss seidel iteration to compute the numerical
+#------------------------------ Steepest Descent -------------------------------
+# This function performs the steepest descent iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
 # are being calculated
 # Arguments:
@@ -25,6 +23,9 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
 # 60    r^(k+1) = r^k - cc*r^k
 # 30    calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                      initial_rms, maximum_iterations, tiny, lambda, output)
+
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -41,6 +42,7 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
     # start calculation
     for iteration_count = 1:maximum_iterations
+
 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
@@ -77,7 +79,7 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
@@ -88,4 +90,48 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
     write(output, "Maximum Norm = ", string(max_error), " \n");
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
+end
+
+#------------------------------- Steepest Descent multigrid --------------------
+# This function performs steepst descent algorithm for fixed number of iterations
+# during relaxation of solution in multigrid framework
+#
+#-------------------------------------------------------------------------------
+function steepest_descent_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+
+    # allocate temporary residual matrix
+    residual = zeros(Float64, nx+1, ny+1)
+    compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
+
+    del_residual    = zeros(Float64, nx+1, ny+1)
+
+    # start calculation
+    for iteration_count = 1:V
+
+        # calculate ∇^2(residual)
+        for j = 2:ny for i = 2:nx
+            del_residual[i,j] = (residual[i+1,j] - 2*residual[i,j] + residual[i-1,j])/(dx^2) +
+                            (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
+                             lambda*lambda*residual[i,j]
+        end end
+
+        aa = 0.0
+        bb = 0.0
+        # calculate aa, bb, cc. cc is the distance parameter(α_n)
+        for j = 2:ny for i = 2:nx
+            aa = aa + residual[i,j]*residual[i,j]
+            bb = bb + del_residual[i,j]*residual[i,j]
+        end end
+        cc = aa/(bb + tiny)
+
+        # update the numerical solution by adding some component of residual
+        for j = 2:ny for i = 2:nx
+            u_numerical[i,j] = u_numerical[i,j] + cc * residual[i,j]
+        end end
+
+        # update the residual by removiing some component of previous residual
+        for j = 2:ny for i = 2:nx
+            residual[i,j] = residual[i,j] - cc * del_residual[i,j]
+        end end
+    end
 end

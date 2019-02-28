@@ -9,8 +9,7 @@ include("steepest_descent_compact.jl")
 include("conjugate_gradient_compact.jl")
 include("biconjugate_gradient_stab_compact.jl")
 include("multigrid_solver.jl")
-
-
+include("multigrid_solver.jl")
 
 #-------------------------Solver function--------------------------------------
 # This function selects the iterative solver based on the flag_solver
@@ -73,7 +72,13 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         end
 
     elseif flag_multigrid != 1 && flag_order == 1
+        # @enter multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+        #                 initial_rms, maximum_iterations, tiny, lambda, output)
+
+        # multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+        #                 initial_rms, maximum_iterations, tiny, lambda, output)
+        n_level = flag_multigrid
         multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                        initial_rms, maximum_iterations, tiny, lambda, output)
+            initial_rms, maximum_iterations, tiny, lambda, output, n_level)
     end
 end

@@ -1,8 +1,6 @@
 include("residualcalculation.jl")
 
-function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
-                                   rms, initial_rms, maximum_iterations, tiny, lambda, output)
-#-------------------------------------------------------------------------------
+#------------------------ Bi-conjugate gradient Stabilized ---------------------
 # This function performs the gauss seidel iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
 # are being calculated
@@ -31,6 +29,9 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
 # 120   r^(k+1) = s^k - ω^(k+1)*t^k........................vector
 # 130   calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
+                                   rms, initial_rms, maximum_iterations, tiny, lambda, output)
+
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -142,4 +143,99 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
     write(output, "Maximum Norm = ", string(max_error), " \n");
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
+end
+
+#------------------------------- Bi-conjugate gradient multigrid ---------------
+# This function performs the biconjugate gradient algorithm  during relaxation
+# for each level for Fixed numbe rof times
+#-------------------------------------------------------------------------------
+
+function biconjugate_gradient_stab_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+
+    # allocate temporary residual matrix
+    residual = zeros(Float64, nx+1, ny+1)
+    compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
+
+    # allocate the matric for direction and set the initial direction (conjugate vector)
+    f_initial = zeros(Float64, nx+1, ny+1)
+
+    # asssign frozen initial residual
+    for j = 1:ny+1 for i = 1:nx+1
+        f_initial[i,j] = residual[i,j]
+    end end
+
+    # initialize bi-conjugate vectors
+    p    = zeros(Float64, nx+1, ny+1)
+    q    = zeros(Float64, nx+1, ny+1)
+    s    = zeros(Float64, nx+1, ny+1)
+    t    = zeros(Float64, nx+1, ny+1)
+
+    # initialize constant scalars
+    alfa  = 1.0
+    omega = 1.0
+    rho   = 1.0
+
+    # start calculation
+    for iteration_count = 1:V
+
+        # calculate ρ^(k+1)
+        rho_new = 0.0
+
+        for j = 2:ny for i = 2:nx
+            rho_new = rho_new + f_initial[i,j]*residual[i,j]
+        end end
+
+        # calculate β^k, rho^k = rho^(k+1)
+        beta = (alfa * rho_new)/(omega * rho + tiny)
+        rho = rho_new
+
+        # calculate p^(k+1) = r^k + β^k(p^k - ω^k*q^k)
+        for j = 2:ny for i = 2:nx
+            p[i,j] = residual[i,j] + beta * (p[i,j] - omega * q[i,j])
+        end end
+
+        # apply filtering operator q^(k+1) = ∇^2(p^(k+1))
+        for j = 2:ny for i = 2:nx
+            q[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/(dx^2) +
+                     (p[i,j+1] - 2*p[i,j] + p[i,j-1])/(dy^2) -
+                     lambda*lambda*p[i,j]
+        end end
+        temp = 0.0
+
+        # calculate α^(k+1) = ρ^(k+1)/<f^0, q^(k+1)>
+        for j = 2:ny for i = 2:nx
+            temp = temp + f_initial[i,j]*q[i,j]
+        end end
+
+        alfa = rho/(temp + tiny)
+
+        # calcualte s^k = r^k - α^(k+1)*q^(k+1)
+        for j = 2:ny for i = 2:nx
+            s[i,j] = residual[i,j] - alfa * q[i,j]
+        end end
+
+        # apply filtering operator t^k = ∇^2(s^k)
+        for j = 2:ny for i = 2:nx
+            t[i,j] = (s[i+1,j] - 2*s[i,j] + s[i-1,j])/(dx^2) +
+                     (s[i,j+1] - 2*s[i,j] + s[i,j-1])/(dy^2) -
+                     lambda*lambda*s[i,j]
+        end end
+
+        # clculate ω^(k+1) = <s^k, t^k>/<t^k, t^k>
+        aa = 0.0
+        bb = 0.0
+        for j = 2:ny for i = 2:nx
+            aa = aa + s[i,j]*t[i,j]
+            bb = bb + t[i,j]*t[i,j]
+        end end
+
+        omega = aa/(bb + tiny)
+
+        # calculate numerical solution u^(k+1) = u^k + α^(k+1)*p^(k+1) + ω^(k+1)*s^k
+        # calculate new residual r^(k+1) = s^k - ω^(k+1)*t^k
+        for j = 2:ny for i = 2:nx
+            u_numerical[i,j] = u_numerical[i,j] + alfa * p[i,j] + omega * s[i,j]
+            residual[i,j] = s[i,j] - omega * t[i,j]
+        end end
+    end
 end

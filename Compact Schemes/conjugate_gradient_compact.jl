@@ -85,7 +85,7 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
         cc = aa/(bb + tiny)
 
         # update the numerical solution by adding some component of conjugate vector
-        for j = 2:ny-1 for i = 2:nx-1
+        for j = 2:ny for i = 2:nx
             u_numerical[i,j] = u_numerical[i,j] + cc * p[i,j]
         end end
 
