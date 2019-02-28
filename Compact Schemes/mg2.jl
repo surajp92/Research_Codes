@@ -2,8 +2,6 @@ include("residualcalculation.jl")
 include("relax_multigrid.jl")
 include("mg_operation.jl")
 
-
-
 #-------------------------Multigrid Solver with 2 levels------------------------
 # this function executes multigrid framework with two levels
 #
@@ -21,6 +19,7 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
+    println("0", " ", rms, " ", rms/initial_rms)
 
     #allocate memory for grid size at different levels
     level_nx = zeros(Int64, 2)
@@ -75,6 +74,9 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
         # @enter restriction(level_nx[1], level_ny[1], level_nx[2], level_ny[2], residual, source_coarse)
 
         restriction(level_nx[1], level_ny[1], level_nx[2], level_ny[2], residual, source_coarse)
+
+        # set solution zero on coarse grid
+        u_numerical_coarse[:,:] = zeros(level_nx[2]+1, level_ny[2]+1)
 
         # solve on the coarsest level and relax V3 times
         relax_multigrid(level_nx[2], level_ny[2], level_dx[2], level_dy[2],

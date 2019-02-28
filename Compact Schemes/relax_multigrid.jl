@@ -1,6 +1,9 @@
 include("jacobi_solver.jl")
 include("gauss_seidel.jl")
 include("steepest_descent.jl")
+include("conjugate_gradient.jl")
+include("biconjugate_gradient_stab.jl")
+
 
 
 #------------------------ Relaxation multigrid----------------------------------
@@ -17,5 +20,9 @@ function relax_multigrid(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
         gauss_seidel_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
     elseif flag_solver == 3
         steepest_descent_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+    elseif flag_solver == 4
+        conjugate_gradient_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+    elseif flag_solver == 5
+        biconjugate_gradient_stab_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
     end
 end

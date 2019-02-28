@@ -1,9 +1,7 @@
 include("residualcalculation.jl")
 
-function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                      initial_rms, maximum_iterations, tiny, lambda, output)
-#-------------------------------------------------------------------------------
-# This function performs the gauss seidel iteration to compute the numerical
+#--------------------------- Conjugate gradient algorithm-----------------------
+# This function performs the conjugate gradient algorithm to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
 # are being calculated
 # Arguments:
@@ -29,6 +27,9 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
 # 80    p^(k+1) = r^(k+1) - cc*p^k
 # 30    calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                      initial_rms, maximum_iterations, tiny, lambda, output)
+
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -57,7 +58,7 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
         for j = 2:ny for i = 2:nx
             del_p[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/(dx^2) +
                          (p[i,j+1] - 2*p[i,j] + p[i,j-1])/(dy^2) -
-                         lambda*lambda*residual[i,j]
+                         lambda*lambda*p[i,j]
         end end
 
         aa = 0.0
@@ -71,7 +72,7 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
         cc = aa/(bb + tiny)
 
         # update the numerical solution by adding some component of conjugate vector
-        for j = 2:ny-1 for i = 2:nx-1
+        for j = 2:ny for i = 2:nx
             u_numerical[i,j] = u_numerical[i,j] + cc * p[i,j]
         end end
 
@@ -98,7 +99,7 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
@@ -109,4 +110,70 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
     write(output, "Maximum Norm = ", string(max_error), " \n");
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
+end
+
+#------------------------------- Conjugate gradient multigrid ------------------
+# This function performs the conjugate gradient algorithm  during relaxation
+# for each level for Fixed numbe rof times
+#-------------------------------------------------------------------------------
+function conjugate_gradient_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+
+    # allocate temporary residual matrix
+    residual = zeros(Float64, nx+1, ny+1)
+    compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
+
+    # allocate the matric for direction and set the initial direction (conjugate vector)
+    p = zeros(Float64, nx+1, ny+1)
+
+    # asssign conjugate vector to initial residual
+    for j = 1:ny+1 for i = 1:nx+1
+        p[i,j] = residual[i,j]
+    end end
+
+    del_p    = zeros(Float64, nx+1, ny+1)
+
+    # start calculation
+    for iteration_count = 1:V
+
+        # calculate ∇^2(residual)
+        for j = 2:ny for i = 2:nx
+            del_p[i,j] = (p[i+1,j] - 2*p[i,j] + p[i-1,j])/(dx^2) +
+                         (p[i,j+1] - 2*p[i,j] + p[i,j-1])/(dy^2) -
+                         lambda*lambda*p[i,j]
+        end end
+
+        aa = 0.0
+        bb = 0.0
+        # calculate aa, bb, cc. cc is the distance parameter(α_n)
+        for j = 2:ny for i = 2:nx
+            aa = aa + residual[i,j]*residual[i,j]
+            bb = bb + del_p[i,j]*p[i,j]
+        end end
+        # cc = <r,r>/<d,p>
+        cc = aa/(bb + tiny)
+
+        # update the numerical solution by adding some component of conjugate vector
+        for j = 2:ny for i = 2:nx
+            u_numerical[i,j] = u_numerical[i,j] + cc * p[i,j]
+        end end
+
+        # bb = <r,r> = aa (calculated in previous loop)
+        bb = aa
+        aa = 0.0
+
+        # update the residual by removing some component of previous residual
+        for j = 1:ny for i = 1:nx
+            residual[i,j] = residual[i,j] - cc * del_p[i,j]
+            aa = aa + residual[i,j]*residual[i,j]
+        end end
+        # cc = <r-cd, r-cd>/<r,r>
+        cc = aa/(bb+tiny)
+
+        # update the conjugate vector
+        for j = 1:ny for i = 1:nx
+            p[i,j] = residual[i,j] + cc * p[i,j]
+        end end
+    end
+    # println("Relaxation")
+    # println(u_numerical)
 end

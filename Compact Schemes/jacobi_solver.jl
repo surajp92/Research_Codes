@@ -55,7 +55,7 @@ function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
@@ -90,7 +90,6 @@ function jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
             residual[i,j] = source[i,j] + lambda*lambda*u_numerical[i,j]-
                         (u_numerical[i+1,j] - 2*u_numerical[i,j] + u_numerical[i-1,j])/dx^2 -
                         (u_numerical[i,j+1] - 2*u_numerical[i,j] + u_numerical[i,j-1])/dy^2
-
         end end
 
         for j = 2:nx for i = 2:ny
@@ -98,5 +97,5 @@ function jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
         end end
     end
     # println("Relaxation")
-    # println(u_numerical)
+    # for i = 1:nx+1    println(u_numerical[i,:], "\n") end
 end
