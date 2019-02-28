@@ -75,12 +75,10 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         # @enter multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         #                 initial_rms, maximum_iterations, tiny, lambda, output)
 
-<<<<<<< HEAD
         # multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         #                 initial_rms, maximum_iterations, tiny, lambda, output)
+        
         n_level = flag_multigrid
-=======
->>>>>>> 57e40ec981309fb68a0525bf39a226975e7b9c25
         multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             initial_rms, maximum_iterations, tiny, lambda, output, n_level)
     end
