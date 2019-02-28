@@ -20,7 +20,10 @@ function mg2(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
     initial_rms = rms
     println("0", " ", rms, " ", rms/initial_rms)
+<<<<<<< HEAD:Compact Schemes/extra files/mg2.jl
 
+=======
+>>>>>>> 57e40ec981309fb68a0525bf39a226975e7b9c25:Compact Schemes/mg2.jl
 
     #allocate memory for grid size at different levels
     level_nx = zeros(Int64, 2)
