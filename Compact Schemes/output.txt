@@ -1,0 +1,4 @@
+Residual details: 
+Error details: 
+L-2 Norm = 1.5986587423550766e-5 
+Maximum Norm = 2.8370687688017426e-5 

@@ -9,7 +9,7 @@ include("steepest_descent_compact.jl")
 include("conjugate_gradient_compact.jl")
 include("biconjugate_gradient_stab_compact.jl")
 include("multigrid_solver.jl")
-include("multigrid_solver.jl")
+
 
 #-------------------------Solver function--------------------------------------
 # This function selects the iterative solver based on the flag_solver
@@ -25,7 +25,12 @@ include("multigrid_solver.jl")
 #-------------------------------------------------------------------------------
 
 function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                initial_rms, maximum_iterations, tiny, lambda, output, flag_solver)
+                initial_rms, maximum_iterations, tiny, lambda, output, flag,
+                relaxcount)
+
+    flag_solver     = flag[2]
+    flag_multigrid  = flag[3]
+    flag_order      = flag[6]
 
     if flag_multigrid == 1 && flag_order == 1
         if flag_solver == 1
@@ -71,15 +76,13 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                                       rms, initial_rms, maximum_iterations, tiny, lambda, output)
         end
 
-    elseif flag_multigrid != 1 && flag_order == 1
+    elseif flag_multigrid != 1
         # @enter multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         #                 initial_rms, maximum_iterations, tiny, lambda, output)
 
-        # multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-        #                 initial_rms, maximum_iterations, tiny, lambda, output)
-        
         n_level = flag_multigrid
+        println(n_level)
         multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-            initial_rms, maximum_iterations, tiny, lambda, output, n_level)
+            initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount, flag)
     end
 end

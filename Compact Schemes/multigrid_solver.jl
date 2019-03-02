@@ -7,8 +7,14 @@ include("mg_operation.jl")
 #
 #-------------------------------------------------------------------------------
 function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-            initial_rms, maximum_iterations, tiny, lambda, output, n_level)
+            initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount, flag)
 
+    relaxation_f2c          = relaxcount[1]
+    relaxation_c2f          = relaxcount[2]
+    relaxation_coarsest     = relaxcount[3]
+    flag_solver             = flag[2]
+    flag_order              = flag[6]
+    println(flag_solver)
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -74,7 +80,8 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         #                 relaxation_f2c)
 
         relax_multigrid(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
-                        source_multigrid[1], u_multigrid[1], lambda, tiny, relaxation_f2c)
+                        source_multigrid[1], u_multigrid[1], lambda, tiny,
+                        relaxation_f2c, flag_solver, flag_order)
         # println(u_multigrid[1])
         # check for convergence only for finest grid
         # compute the residual and L2 norm
@@ -115,10 +122,12 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             # solve (∇^-λ^2)ϕ = ϵ on coarse grid (kthe level)
             if k < n_level
                 relax_multigrid(level_nx[k], level_ny[k], level_dx[k], level_dy[k],
-                            source_multigrid[k], u_multigrid[k], lambda, tiny, relaxation_f2c)
+                            source_multigrid[k], u_multigrid[k], lambda, tiny,
+                            relaxation_f2c, flag_solver, flag_order)
             elseif k == n_level
                 relax_multigrid(level_nx[k], level_ny[k], level_dx[k], level_dy[k],
-                            source_multigrid[k], u_multigrid[k], lambda, tiny, relaxation_coarsest)
+                            source_multigrid[k], u_multigrid[k], lambda, tiny,
+                            relaxation_coarsest, flag_solver, flag_order)
             end
             # println(u_multigrid[k])
         end
@@ -137,7 +146,8 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             end end
 
             relax_multigrid(level_nx[k-1], level_ny[k-1], level_dx[k-1], level_dy[k-1],
-                            source_multigrid[k-1], u_multigrid[k-1], lambda, tiny, relaxation_c2f)
+                            source_multigrid[k-1], u_multigrid[k-1], lambda, tiny,
+                            relaxation_c2f, flag_solver, flag_order)
 
             #println(u_multigrid[k-1])
         end

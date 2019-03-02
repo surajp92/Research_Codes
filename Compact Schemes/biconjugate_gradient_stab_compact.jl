@@ -1,7 +1,5 @@
 include("residualcalculation_compact.jl")
 
-function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_numerical,
-                                   rms, initial_rms, maximum_iterations, tiny, lambda, output)
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
@@ -31,6 +29,9 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
 # 120   r^(k+1) = s^k - ω^(k+1)*t^k........................vector
 # 130   calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_numerical,
+                                   rms, initial_rms, maximum_iterations, tiny, lambda, output)
+
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -154,7 +155,7 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break

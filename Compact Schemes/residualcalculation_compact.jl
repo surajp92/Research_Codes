@@ -19,6 +19,13 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
     lambda2 = lambda*lambda
 
     for i = 2:nx for j = 2:ny
+
+        # alternate 4th order accurate method
+        # F = 0.5*dx*dx*(source[i+1,j] + source[i-1,j] + source[i,j+1] + source[i,j-1] + 8*source[i,j])
+        # x_grid = 4.0*(u_numerical[i+1,j] + u_numerical[i-1,j] + u_numerical[i,j+1] + u_numerical[i,j-1])
+        # x_corner = (u_numerical[i+1,j+1] + u_numerical[i-1,j+1] + u_numerical[i+1,j-1] + u_numerical[i-1,j-1])
+        # residual[i,j] = (source[i,j] - x_grid - x_corner + 20*u_numerical[i,j])
+
         # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
         f_grid = (source[i+1,j] + source[i-1,j] + source[i,j+1] + source[i,j-1])/10
         # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)

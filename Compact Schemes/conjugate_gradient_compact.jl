@@ -1,7 +1,5 @@
 include("residualcalculation_compact.jl")
 
-function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                      initial_rms, maximum_iterations, tiny, lambda, output)
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
 # solution at every step. Numerical solution is updated while the residuals
@@ -29,6 +27,9 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
 # 80    p^(k+1) = r^(k+1) - cc*p^k
 # 30    calculate rms for r^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
+function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                      initial_rms, maximum_iterations, tiny, lambda, output)
+
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -51,10 +52,10 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
     del_p    = zeros(Float64, nx+1, ny+1)
 
     # calculate constant coefficients
-    ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
-    nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
-    ne = nw = se = sw = 6/(50*dx*dx) + 6/(50*dy*dy)
-    cc = 12/(5*dx*dx) + 12/(5*dy*dy)
+    ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
+    nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
+    ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
+    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
 
     # start calculation
@@ -71,7 +72,6 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
             X = x_grid + x_corner
 
             del_p[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
-
         end end
 
         aa = 0.0
@@ -112,15 +112,15 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
         write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
         count = iteration_count
 
-        println(iteration_count, " ", rms/initial_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
         if (rms/initial_rms) <= tolerance
             break
         end
     end
-    max_error = maximum(abs.(residual))
+    max_residual = maximum(abs.(residual))
     write(output, "L-2 Norm = ", string(rms), " \n");
-    write(output, "Maximum Norm = ", string(max_error), " \n");
+    write(output, "Maximum Norm = ", string(max_residual), " \n");
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
 end
