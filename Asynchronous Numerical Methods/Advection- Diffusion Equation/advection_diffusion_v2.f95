@@ -38,10 +38,10 @@ real*8  							   	:: kappa 			! wave number
 real*8, dimension(:,:), allocatable	   	:: u_old
 real*8, dimension(:,:), allocatable	   	:: u_new
 real*8, dimension(:,:), allocatable	   	:: u_exact
-real*8, dimension(:), allocatable	   	:: x
+real*8, dimension(:), allocatable	   	:: x, t
 real*8, parameter					   	:: pi = 3.14159265358979323846264338D0
 real*8, parameter					   	:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter					   	:: nx_global = 8
+integer, parameter					   	:: nx_global = 32
 integer									:: nx_local
 real*8									:: dx, dt, x_loc_min
 integer									:: i, k 
@@ -50,6 +50,7 @@ integer, parameter						:: istart = 1, kstart = 1
 integer									:: i_global_low, i_global_high
 real*8									:: phi				! phase angle
 real*8									:: start_time, stop_time, time 
+real*8									:: local_error_sum, global_error_sum, avg_global_error
 
 common /wavenumber/ kappa
 kappa = 2.0
@@ -70,7 +71,6 @@ call MPI_COMM_RANK(MPI_COMM_WORLD, &
 
 if (rank == 0) then
     write(*,*) 'No. of processor = ', nprocs, 'Rank = ', rank
-    write(*,*)
     write(*,*) 'Nx_Global = ', nx_global
     write(*,*) 'Total size = ', nx_global
 end if
@@ -86,12 +86,13 @@ end if
 
 ! local size
 nx_local = nx_global/nprocs
-print *, rank, nx_global, nx_local
+! print *, rank, nx_global, nx_local
 
 ! grid size
 dx 			= (x_max - x_min)/(nx_global)
 dt 			= cfl*(dx**2)/alpha
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
+! print *, dx, dt, time_steps
 phi 		= 5.0	! only one phase angle is considered. 
 
 ! allocate the local array for field variables and grid positions
@@ -99,6 +100,7 @@ allocate(      u_old(0:nx_local+1, 0:time_steps))
 allocate(      u_new(0:nx_local+1, 0:time_steps))
 allocate(    u_exact(0:nx_local+1, 0:time_steps))
 allocate(          x(0:nx_local+1))
+allocate(          t(0:time_steps))
 
 ! print *, 'rank', rank, 'uold', u_old(1,:)
 ! allocate grid position
@@ -107,7 +109,8 @@ do i = 0,nx_local+1
 	x(i) 	  = x_loc_min + dx*(i-1)		! position of x for each grid
 end do
 
-print *, 'Rank = ', rank, 'X', x
+
+! print *, 'Rank = ', rank, 'X', x
 call initialize(rank, nprocs, x, nx_local, time_steps, u_old, u_exact, phi)
 
 ! print *, 'Rank = ', rank, 'U_Exact = ', u_exact
@@ -117,11 +120,14 @@ call initialize(rank, nprocs, x, nx_local, time_steps, u_old, u_exact, phi)
 
 call cpu_time(start_time)
 
+
+t(0) = 0.0
 do k = 1,time_steps
 ! calculate exact solution at kth time step
 	time = k*dt
+	t(k) = time
 	do i = 0,nx_local+1
-	
+		
 		u_exact(i,k) = exp(-time*alpha*kappa*kappa)*sin(kappa*(x(i)-c*time) + pi*phi/180.0)
 	
 	end do	
@@ -147,7 +153,7 @@ do k = 1,time_steps
 
 !------------------------------------------------------------------
 ! communicate the solution between ghost nodes	
-! left and right boundary of internal domain gets updated at u_old
+! left and right boundary of internal domains gets updated for u_old
 
 	! send solution of last grid point of local domain (rank 0,1..) (i = nx) to
     ! left ghost nodes of neighbouring right domain ((rank+1) 1,2..) (i = 0)
@@ -201,29 +207,63 @@ do k = 1,time_steps
                                       ierr)   ! ierr = 0 if successful
     end if
     
-    ! wait till Isend and Irecv above is completed
+! wait till Isend and Irecv above is completed
     call MPI_Waitall(4, req, status_array, ierr)
     
-    ! update old field to new field 
+! update old field to new field 
     do i = 1,nx_local
 		u_old(i,k) = u_new(i,k)
     end do
     
-    ! update old field for left boundary
+! update old field for left boundary
     if (rank == 0) then
 		u_old(1,k) = u_new(1,k)
     end if
     
-    ! update old field for right boundary
+! update old field for right boundary
     if (rank == nprocs-1) then
 		u_old(nx_local+1,k) = u_new(nx_local+1,k)
     end if 
 end do
 
+! calculate error using u_old and u_exact 
+local_error_sum  = 0.0
+global_error_sum = 0.0
+ 
+do i = 1,nx_local
+	! if (rank == 0 .and. i ==0) cycle
+	
+	local_error_sum = local_error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
+	
+end do
+print *, 'rank', rank, local_error_sum
+
+! take sum of error from each processor  
+	call MPI_Reduce(local_error_sum, & ! variable to be collected from all processors
+                   global_error_sum, & ! variable in which result is to be stored
+                                  1, & ! number of values
+               MPI_DOUBLE_PRECISION, & ! datatype of variable
+                            MPI_SUM, & ! type of operation
+                                  0, & ! rank of processor in which variable is to be stored
+                     MPI_COMM_WORLD, & !
+                                ierr)  ! ierr = 0 if successful
+                                
+if (rank == 0) then
+
+	avg_global_error = global_error_sum/(nx_local)
+	print *, 'average global', avg_global_error
+	
+end if
+
+! ensamble average of error
+
 ! wait till all processors come to this points this is for accurate timing and clean output
 
 call MPI_Barrier(MPI_COMM_WORLD, & !
                             ierr) ! ierr = 0 if successful
+
+! call subroutine to write the results for plotting
+call write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, nprocs)
 
 call cpu_time(stop_time)
 
@@ -263,3 +303,57 @@ do i = 0,nx_local+1
 end do
 
 end subroutine initialize
+
+
+!------------------------------- Export results subroutine ---------------------
+! This subroutine writes the results in .dat file which can be plotted using
+! tecplot
+!-------------------------------------------------------------------------------
+subroutine write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, nprocs)
+
+implicit none
+
+integer, intent(in)											:: nx_local, time_steps, rank, nprocs
+real*8, intent(in), dimension(0:nx_local+1, 0:time_steps)	:: u_new, u_exact
+real*8, intent(in), dimension(0:nx_local+1)					:: x
+real*8, intent(in), dimension(0:time_steps)					:: t
+
+integer														:: i, k
+character(80)												:: char_temp, filename
+
+
+!-------------------------------------------------------------------------------
+! store the value of rank as a character in the the character variable char_temp
+write(char_temp, '(i5)') rank
+
+!-------------------------------------------------------------------------------
+! define the file name
+filename = "tecplot_" // trim(adjustl(char_temp)) // '.dat'
+
+!-------------------------------------------------------------------------------
+! Open the file and start writing the data
+open(unit = 1, file = filename, status = "unknown")
+
+!-------------------------------------------------------------------------------
+! header
+write(1,*) 'title =', '"Partition_'// trim(adjustl(char_temp)), '"'
+write(1,*) 'variables = "x", "U", "U_Exact", "U-U_Exact"'
+
+!if (rank == 0) then
+!	write(1,*) 'zone T =', 'Partition_'// trim(adjustl(char_temp)),' i', nx_local+1, 'j=', time_steps+1
+!else
+!	write(1,*) 'zone T =', 'Partition_'// trim(adjustl(char_temp)),' i', nx_local+2, 'j=', time_steps+1
+!end if
+
+! do k = 0, time_steps
+	do i = 0, nx_local+1
+		if (rank == 0 .and. i ==0) cycle
+		
+		write(1,*) x(i), u_new(i,time_steps), u_exact(i,time_steps), u_new(i,time_steps) - u_exact(i,time_steps)
+	
+	end do
+!end do
+
+! close the file
+close(1)
+end subroutine write_tecplot_file
