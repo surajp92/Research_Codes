@@ -313,13 +313,13 @@ subroutine write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, 
 
 implicit none
 
-integer, intent(in)											:: nx_local, time_steps, rank, nprocs
+integer, intent(in)	:: nx_local, time_steps, rank, nprocs
 real*8, intent(in), dimension(0:nx_local+1, 0:time_steps)	:: u_new, u_exact
-real*8, intent(in), dimension(0:nx_local+1)					:: x
-real*8, intent(in), dimension(0:time_steps)					:: t
+real*8, intent(in), dimension(0:nx_local+1)			:: x
+real*8, intent(in), dimension(0:time_steps)			:: t
 
-integer														:: i, k
-character(80)												:: char_temp, filename
+integer												:: i, k
+character(80)										:: char_temp, filename
 
 
 !-------------------------------------------------------------------------------
