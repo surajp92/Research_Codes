@@ -20,37 +20,37 @@ implicit none
 include 'mpif.h'
 
 ! MPI reated variables
-integer 	                           	:: ierr ! error signal variable, Standard value - 0
-integer 	                           	:: rank ! process ID (pid) / Number
-integer		                           	:: nprocs ! number of processors
+integer 	                        :: ierr ! error signal variable, Standard value - 0
+integer 	                        :: rank ! process ID (pid) / Number
+integer		                        :: nprocs ! number of processors
 integer, dimension(MPI_STATUS_SIZE)    	:: status ! status for receive
-integer, parameter					   	:: id_left_to_right = 10 ! tag for send/ receive
-integer, parameter					   	:: id_right_to_left = 20 ! tag for send/ receive
+integer, parameter			:: id_left_to_right = 10 ! tag for send/ receive
+integer, parameter			:: id_right_to_left = 20 ! tag for send/ receive
 integer, dimension(4)                  	:: req = MPI_REQUEST_NULL
 integer, dimension(MPI_STATUS_SIZE, 4)	:: status_array
 
 ! Computational parameters related to advection-diffusion equation
-real*8, parameter					   	:: c = 1.0			! wave speed
-real*8, parameter					   	:: alpha = 0.1		! diffusion coefficient 
-real*8, parameter					   	:: cfl = 0.1		! CFL condition for stability
-real*8, parameter					   	:: t_norm = 1.0		! Normalized time
-real*8  							   	:: kappa 			! wave number
+real*8, parameter				:: c = 1.0			! wave speed
+real*8, parameter				:: alpha = 0.1		! diffusion coefficient 
+real*8, parameter				:: cfl = 0.1		! CFL condition for stability
+real*8, parameter				:: t_norm = 1.0		! Normalized time
+real*8  					:: kappa 			! wave number
 real*8, dimension(:,:), allocatable	   	:: u_old
 real*8, dimension(:,:), allocatable	   	:: u_new
 real*8, dimension(:,:), allocatable	   	:: u_exact
 real*8, dimension(:), allocatable	   	:: x, t
-real*8, parameter					   	:: pi = 3.14159265358979323846264338D0
-real*8, parameter					   	:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter					   	:: nx_global = 32
-integer									:: nx_local
-real*8									:: dx, dt, x_loc_min
-integer									:: i, k 
-integer									:: time_steps 		! total number of time steps from 0 to T = 1.0
-integer, parameter						:: istart = 1, kstart = 1
-integer									:: i_global_low, i_global_high
-real*8									:: phi				! phase angle
-real*8									:: start_time, stop_time, time 
-real*8									:: local_error_sum, global_error_sum, avg_global_error
+real*8, parameter				:: pi = 3.14159265358979323846264338D0
+real*8, parameter				:: x_min = 0.0, x_max = 2.0*pi
+integer, parameter				:: nx_global = 32
+integer						:: nx_local
+real*8						:: dx, dt, x_loc_min
+integer						:: i, k 
+integer						:: time_steps 		! total number of time steps from 0 to T = 1.0
+integer, parameter				:: istart = 1, kstart = 1
+integer						:: i_global_low, i_global_high
+real*8						:: phi				! phase angle
+real*8						:: start_time, stop_time, time 
+real*8						:: local_error_sum, global_error_sum, avg_global_error
 
 common /wavenumber/ kappa
 kappa = 2.0
@@ -148,7 +148,7 @@ do k = 1,time_steps
 	
 	! update the right boundary i = nx_local+1 and rank = nprocs-1
 	if (rank == nprocs-1) then
-		u_new(nx_local+1,k) = u_new(nx_local,k) 
+		u_new(nx_local+1,k) = u_exact(nx_local,k) 
 	end if
 
 !------------------------------------------------------------------
@@ -286,14 +286,14 @@ subroutine initialize(rank, nprocs, x, nx_local, time_steps, u_old, u_exact, phi
 
 implicit none
 
-integer, intent(in)                             			:: nx_local, time_steps, rank, nprocs
-real*8, intent(in), dimension(0:nx_local+1)					:: x
+integer, intent(in)                             	    :: nx_local, time_steps, rank, nprocs
+real*8, intent(in), dimension(0:nx_local+1)		    :: x
 real*8, intent(out), dimension(0:nx_local+1, 0:time_steps)  :: u_old
 real*8, intent(out), dimension(0:nx_local+1, 0:time_steps)  :: u_exact
-real*8														:: phi, kappa
+real*8							    :: phi, kappa
 
-integer														:: i, k
-real*8, parameter                               			:: pi = 3.141592653589793238
+integer							    :: i, k
+real*8, parameter                               	    :: pi = 3.141592653589793238
 
 common /wavenumber/ kappa
 ! print *, 'rank = ', rank, 'u_exact = ', u_exact
@@ -318,8 +318,8 @@ real*8, intent(in), dimension(0:nx_local+1, 0:time_steps)	:: u_new, u_exact
 real*8, intent(in), dimension(0:nx_local+1)			:: x
 real*8, intent(in), dimension(0:time_steps)			:: t
 
-integer												:: i, k
-character(80)										:: char_temp, filename
+integer								:: i, k
+character(80)							:: char_temp, filename
 
 
 !-------------------------------------------------------------------------------
