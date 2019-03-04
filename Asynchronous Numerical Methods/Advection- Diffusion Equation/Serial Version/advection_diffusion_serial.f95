@@ -34,6 +34,7 @@ kappa = 2.0
 dx 			= (x_max - x_min)/(nx)
 dt 			= cfl*(dx**2)/alpha
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
+! time_steps = 1
 phi 		= 5.0	! only one phase angle is considered. 
 
 ! allocate the local array for field variables and grid positions

@@ -92,6 +92,7 @@ nx_local = nx_global/nprocs
 dx 			= (x_max - x_min)/(nx_global)
 dt 			= cfl*(dx**2)/alpha
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
+! time_steps = 1
 ! print *, dx, dt, time_steps
 phi 		= 5.0	! only one phase angle is considered. 
 
@@ -148,7 +149,7 @@ do k = 1,time_steps
 	
 	! update the right boundary i = nx_local+1 and rank = nprocs-1
 	if (rank == nprocs-1) then
-		u_new(nx_local+1,k) = u_exact(nx_local,k) 
+		u_new(nx_local+1,k) = u_exact(nx_local+1,k) 
 	end if
 
 !------------------------------------------------------------------
@@ -231,10 +232,8 @@ local_error_sum  = 0.0
 global_error_sum = 0.0
  
 do i = 1,nx_local
-	! if (rank == 0 .and. i ==0) cycle
-	
+	if (rank == 0 .and. i ==0) cycle
 	local_error_sum = local_error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
-	
 end do
 print *, 'rank', rank, local_error_sum
 
@@ -248,12 +247,6 @@ print *, 'rank', rank, local_error_sum
                      MPI_COMM_WORLD, & !
                                 ierr)  ! ierr = 0 if successful
                                 
-if (rank == 0) then
-
-	avg_global_error = global_error_sum/(nx_local)
-	print *, 'average global', avg_global_error
-	
-end if
 
 ! ensamble average of error
 
@@ -261,6 +254,13 @@ end if
 
 call MPI_Barrier(MPI_COMM_WORLD, & !
                             ierr) ! ierr = 0 if successful
+                            
+if (rank == 0) then
+
+	avg_global_error = global_error_sum/(nx_global)
+	print *, 'average global', avg_global_error
+
+end if
 
 ! call subroutine to write the results for plotting
 call write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, nprocs)
@@ -287,13 +287,13 @@ subroutine initialize(rank, nprocs, x, nx_local, time_steps, u_old, u_exact, phi
 implicit none
 
 integer, intent(in)                             	    :: nx_local, time_steps, rank, nprocs
-real*8, intent(in), dimension(0:nx_local+1)		    :: x
+real*8, intent(in), dimension(0:nx_local+1)		    	:: x
 real*8, intent(out), dimension(0:nx_local+1, 0:time_steps)  :: u_old
 real*8, intent(out), dimension(0:nx_local+1, 0:time_steps)  :: u_exact
 real*8							    :: phi, kappa
 
 integer							    :: i, k
-real*8, parameter                               	    :: pi = 3.141592653589793238
+real*8, parameter                   :: pi = 3.141592653589793238
 
 common /wavenumber/ kappa
 ! print *, 'rank = ', rank, 'u_exact = ', u_exact
@@ -319,7 +319,7 @@ real*8, intent(in), dimension(0:nx_local+1)			:: x
 real*8, intent(in), dimension(0:time_steps)			:: t
 
 integer								:: i, k
-character(80)							:: char_temp, filename
+character(80)						:: char_temp, filename
 
 
 !-------------------------------------------------------------------------------
