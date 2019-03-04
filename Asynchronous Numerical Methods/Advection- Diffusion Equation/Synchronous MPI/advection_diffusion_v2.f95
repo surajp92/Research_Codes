@@ -1,10 +1,10 @@
 !-------------------------------------------------------------------------------
 ! The code solves the advection diffusion equation using Proxy equation
 ! approach given in the below reference paper using MPI. The code is
-! still under development
+! still under development. 
 !
 !---------------------------------------------------------------------!
-!
+! Reference Paper: 
 ! Mittal, Ankita, and Sharath Girimaji. "Proxy-equation paradigm:
 ! A strategy for massively parallel asynchronous computations."
 ! Physical Review E 96.3 (2017): 033304.
@@ -51,6 +51,9 @@ integer						:: i_global_low, i_global_high
 real*8						:: phi				! phase angle
 real*8						:: start_time, stop_time, time 
 real*8						:: local_error_sum, global_error_sum, avg_global_error
+integer, parameter				:: angle_num = 11 	! number of randoom phase angle s for ensamble averaging
+real*8, dimension(angle_num)	:: rand_angle, phis	! array for storing generated random numbers and phase angles
+integer							:: angle_par	! index for phis
 
 common /wavenumber/ kappa
 kappa = 2.0
@@ -75,6 +78,15 @@ if (rank == 0) then
     write(*,*) 'Total size = ', nx_global
 end if
 
+if (rank == 0) then
+
+	call Random_number(rand_angle)
+	! print *, rand_angle
+	do angle_par = 1, angle_num
+		phis(angle_par) = 20.0*(rand_angle(angle_par) - 0.5)*2.0
+	end do
+
+end if
 !-------------------------------------------------------------------------------
 ! Allocate x-position to each grid point
 ! The domain is partitioned in x-direction and there are two global ghost nodes
@@ -85,16 +97,20 @@ end if
 
 
 ! local size
-nx_local = nx_global/nprocs
+nx_local 		= nx_global/nprocs
+local_error_sum = 0.0
 ! print *, rank, nx_global, nx_local
 
+do angle_par = 1, angle_num
 ! grid size
 dx 			= (x_max - x_min)/(nx_global)
 dt 			= cfl*(dx**2)/alpha
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
 ! time_steps = 1
 ! print *, dx, dt, time_steps
-phi 		= 5.0	! only one phase angle is considered. 
+! phi 		= 5.0	! only one phase angle is considered. 
+phi = phis(angle_par)
+
 
 ! allocate the local array for field variables and grid positions
 allocate(      u_old(0:nx_local+1, 0:time_steps))
@@ -228,14 +244,20 @@ do k = 1,time_steps
 end do
 
 ! calculate error using u_old and u_exact 
-local_error_sum  = 0.0
-global_error_sum = 0.0
+	do i = 1,nx_local
+		if (rank == 0 .and. i ==0) cycle
+		local_error_sum = local_error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
+	end do
+
+! calculate error using u_old and u_exact 
+!local_error_sum  = 0.0
+!global_error_sum = 0.0
  
-do i = 1,nx_local
-	if (rank == 0 .and. i ==0) cycle
-	local_error_sum = local_error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
-end do
-print *, 'rank', rank, local_error_sum
+!do i = 1,nx_local
+!	if (rank == 0 .and. i ==0) cycle
+!	local_error_sum = local_error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
+!end do
+!print *, 'rank', rank, local_error_sum
 
 ! take sum of error from each processor  
 	call MPI_Reduce(local_error_sum, & ! variable to be collected from all processors
@@ -247,23 +269,28 @@ print *, 'rank', rank, local_error_sum
                      MPI_COMM_WORLD, & !
                                 ierr)  ! ierr = 0 if successful
                                 
-
-! ensamble average of error
-
-! wait till all processors come to this points this is for accurate timing and clean output
-
+	
+	deallocate(u_old, u_new, u_exact)
+	deallocate(x)
+	deallocate(t)
+	
+! wait till all processors come to this points 
+! this is for each processor will start with same randomly generated phase angle
+! this also ensures accurate timing and clean output
 call MPI_Barrier(MPI_COMM_WORLD, & !
                             ierr) ! ierr = 0 if successful
                             
+
+end do
+
+! ensamble average of error
 if (rank == 0) then
-
-	avg_global_error = global_error_sum/(nx_global)
+	avg_global_error = global_error_sum/(nx_global*angle_num)
 	print *, 'average global', avg_global_error
-
 end if
 
 ! call subroutine to write the results for plotting
-call write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, nprocs)
+! call write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, nprocs)
 
 call cpu_time(stop_time)
 
@@ -271,9 +298,9 @@ call cpu_time(stop_time)
 ! MPI final calls
 call MPI_FINALIZE(ierr) ! ierr = 0 if successful
 
-deallocate(u_old)
-deallocate(u_new)
-deallocate(u_exact)
+!deallocate(u_old)
+!deallocate(u_new)
+!deallocate(u_exact)
 
 end program advection_diffusion
 

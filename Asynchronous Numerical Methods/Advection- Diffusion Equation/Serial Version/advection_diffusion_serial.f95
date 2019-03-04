@@ -21,88 +21,107 @@ real*8, parameter				:: pi = 3.14159265358979323846264338D0
 real*8, parameter				:: x_min = 0.0, x_max = 2.0*pi
 integer, parameter				:: nx = 32
 real*8						    :: dx, dt, x_loc_min
-integer						    :: i, k 
+integer						    :: i, k 			! space and time index
 integer						    :: time_steps 		! total number of time steps from 0 to T = 1.0
 real*8						    :: phi				! phase angle
 real*8						    :: start_time, stop_time, time 
 real*8						    :: error_sum, avg_error
+integer, parameter				:: angle_num = 11 	! number of randoom phase angle s for ensamble averaging
+real*8, dimension(angle_num)	:: rand_angle, phis	! array for storing generated random numbers and phase angles
+integer							:: angle_par	! index for phis
 
 common /wavenumber/ kappa
 kappa = 2.0
+error_sum = 0.0
+
+call Random_number(rand_angle)
+print *, rand_angle
+
+do angle_par = 1, angle_num
+	phis(angle_par) = 20.0*(rand_angle(angle_par) - 0.5)*2.0
+end do
 
 ! grid size
 dx 			= (x_max - x_min)/(nx)
 dt 			= cfl*(dx**2)/alpha
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
 ! time_steps = 1
-phi 		= 5.0	! only one phase angle is considered. 
 
-! allocate the local array for field variables and grid positions
-allocate(      u_old(0:nx, 0:time_steps))
-allocate(      u_new(0:nx, 0:time_steps))
-allocate(    u_exact(0:nx, 0:time_steps))
-allocate(          x(0:nx))
-allocate(    t(0:time_steps))
+do angle_par = 1, angle_num
+	phi 		= phis(angle_par)	! only one phase angle is considered. 
+	
+	print *, phi
+	
+	! allocate the local array for field variables and grid positions
+	allocate(      u_old(0:nx, 0:time_steps))
+	allocate(      u_new(0:nx, 0:time_steps))
+	allocate(    u_exact(0:nx, 0:time_steps))
+	allocate(          x(0:nx))
+	allocate(    t(0:time_steps))
 
-! allocate grid position
-do i = 0,nx
-	x(i) 	  = x_min + dx*(i)		! position of x for each grid
-end do
-
-
-! print *, 'Rank = ', rank, 'X', x
-call initialize( x, nx, time_steps, u_old, u_exact, phi)
-
-call cpu_time(start_time)
-
-t(0) = 0.0
-
+	! allocate grid position
+	do i = 0,nx
+		x(i) 	  = x_min + dx*(i)		! position of x for each grid
+	end do
+	
+	
+	! print *, 'Rank = ', rank, 'X', x
+	call initialize( x, nx, time_steps, u_old, u_exact, phi)
+	
+	call cpu_time(start_time)
+	
+	t(0) = 0.0
+	
 !------------------------------------------------------------------
 ! start time loop 
-do k = 1,time_steps
+	do k = 1,time_steps
 !------------------------------------------------------------------
 ! calculate exact solution at kth time step needed for left and right boundary
-	time = k*dt
-	t(k) = time
-	do i = 0,nx
-		u_exact(i,k) = exp(-time*alpha*kappa*kappa)*sin(kappa*(x(i)-c*time) + pi*phi/180.0)
-	end do	
-
+		time = k*dt
+		t(k) = time
+		do i = 0,nx
+			u_exact(i,k) = exp(-time*alpha*kappa*kappa)*sin(kappa*(x(i)-c*time) + pi*phi/180.0)
+		end do	
+	
 !----------------------------------------------------------------------	
 ! do calculation for all other points in the local domain
 ! skip points for i = 0 and i = nx+1 which are calculated by neigbouring domains
 ! and is exchanged by send/ receive	
 	do i = 0,nx
-		! update left boundary i = 0  
-		if (i == 0) then
-			u_new(i,k) = u_exact(i,k)
-        
-        ! update the right boundary i = nx
-        elseif (i == nx) then
-            u_new(nx,k) = u_exact(nx,k)
-        
-        ! internal points    
-        else
-			u_new(i,k) = u_old(i,k-1) - c*dt*(u_old(i+1,k-1) - u_old(i-1,k-1))/(2*dx) &
-					 + alpha*dt*(u_old(i+1,k-1) - 2.0*u_old(i,k-1) + u_old(i-1,k-1))/(dx*dx)
-		end if
-	end do
- 
+			! update left boundary i = 0  
+			if (i == 0) then
+				u_new(i,k) = u_exact(i,k)
+	        
+	        ! update the right boundary i = nx
+	        elseif (i == nx) then
+	            u_new(nx,k) = u_exact(nx,k)
+	        
+	        ! internal points    
+	        else
+				u_new(i,k) = u_old(i,k-1) - c*dt*(u_old(i+1,k-1) - u_old(i-1,k-1))/(2*dx) &
+						 + alpha*dt*(u_old(i+1,k-1) - 2.0*u_old(i,k-1) + u_old(i-1,k-1))/(dx*dx)
+			end if
+		end do
+	 
 !------------------------------------------------------------------    
 ! update old field to new field 
-    do i = 0,nx
-		u_old(i,k) = u_new(i,k)
-    end do
-end do	
-
+		do i = 0,nx
+			u_old(i,k) = u_new(i,k)
+	    end do
+	end do	
 !------------------------------------------------------------------
 ! calculate the local error between numerical solution and exact solution    
-    error_sum = 0.0
     do i = 0,nx
         error_sum = error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
     end do
     
-    avg_error = error_sum/(nx)
+	deallocate(u_old, u_new, u_exact)
+	deallocate(x)
+	deallocate(t)
+end do
+
+    
+    avg_error = error_sum/(nx*angle_num)
 	print *,'Average error', avg_error
     
 end program advection_diffusion

@@ -1,5 +1,5 @@
-clear
-ls
+# clear
+# ls
 # Remove old executables
 rm *.exe
 ls
