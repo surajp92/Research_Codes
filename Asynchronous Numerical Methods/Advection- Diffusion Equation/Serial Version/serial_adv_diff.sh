@@ -1,4 +1,4 @@
-clear
+# clear
 ls
 rm *.o *,mod *.exe
 ls

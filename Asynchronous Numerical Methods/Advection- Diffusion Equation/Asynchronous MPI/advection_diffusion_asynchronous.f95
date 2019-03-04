@@ -13,7 +13,7 @@
 !	Author: Suraj Pawar
 !-------------------------------------------------------------------------------
 
-program advection_diffusion
+program advection_diffusion_asynchronous
 
 implicit none
 
@@ -26,8 +26,10 @@ integer		                        :: nprocs ! number of processors
 integer, dimension(MPI_STATUS_SIZE)    	:: status ! status for receive
 integer, parameter			:: id_left_to_right = 10 ! tag for send/ receive
 integer, parameter			:: id_right_to_left = 20 ! tag for send/ receive
-integer, dimension(4)                  	:: req = MPI_REQUEST_NULL
-integer, dimension(MPI_STATUS_SIZE, 4)	:: status_array
+integer, parameter			:: id_t_left_to_right = 30 ! tag for send/ receive
+integer, parameter			:: id_t_right_to_left = 40 ! tag for send/ receive
+integer, dimension(8)                  	:: req = MPI_REQUEST_NULL
+integer, dimension(MPI_STATUS_SIZE, 8)	:: status_array
 
 ! Computational parameters related to advection-diffusion equation
 real*8, parameter				:: c = 1.0			! wave speed
@@ -54,6 +56,9 @@ real*8						:: local_error_sum, global_error_sum, avg_global_error
 integer, parameter				:: angle_num = 1 	! number of randoom phase angle s for ensamble averaging
 real*8, dimension(angle_num)	:: rand_angle, phis	! array for storing generated random numbers and phase angles
 integer							:: angle_par	! index for phis
+real*8							:: r_alpha, r_c, D
+real*8							:: alpha_async, c_async, time_left, time_right
+real*8							:: k_right, k_left
 
 common /wavenumber/ kappa
 kappa = 2.0
@@ -108,6 +113,9 @@ do angle_par = 1, angle_num
 dx 			= (x_max - x_min)/(nx_global)
 dt 			= cfl*(dx**2)/alpha
 
+! define parameters for 
+r_alpha 	= alpha*dt/(dx**2)
+r_c 		= c*dt/dx
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
 
 phi = phis(angle_par)
@@ -156,6 +164,24 @@ do k = 1,time_steps
 		! update left boundary i = 1 for rank = 0 
 		if (rank == 0 .and. i == 1) then
 			u_new(i,k) = u_exact(i,k)
+		elseif (i == 1) then
+			! D 			= abs((k_left-k)*dt)*(r_alpha - 0.5*r_c)
+			D 			= abs(time_left-time)*(r_alpha - 0.5*r_c)
+			! print *, rank, D
+			alpha_async	= alpha/(1-D)
+			c_async		= c/(1-D) 
+			u_new(i,k) = u_old(i,k-1) - c_async*dt*(u_old(i+1,k-1) - u_old(i-1,k-1))/(2*dx) &
+					 + alpha_async*dt*(u_old(i+1,k-1) - 2.0*u_old(i,k-1) + u_old(i-1,k-1))/(dx*dx)
+					 
+		elseif (i == nx_local) then
+			! D 			= abs((k_right-k)*dt)*(r_alpha - 0.5*r_c)
+			D 			= abs(time_right-time)*(r_alpha - 0.5*r_c)
+			! print *, rank, D
+			alpha_async	= alpha/(1-D)
+			c_async		= c/(1-D) 
+			u_new(i,k) = u_old(i,k-1) - c_async*dt*(u_old(i+1,k-1) - u_old(i-1,k-1))/(2*dx) &
+					 + alpha_async*dt*(u_old(i+1,k-1) - 2.0*u_old(i,k-1) + u_old(i-1,k-1))/(dx*dx)
+		
 		else
 			u_new(i,k) = u_old(i,k-1) - c*dt*(u_old(i+1,k-1) - u_old(i-1,k-1))/(2*dx) &
 					 + alpha*dt*(u_old(i+1,k-1) - 2.0*u_old(i,k-1) + u_old(i-1,k-1))/(dx*dx)
@@ -222,9 +248,62 @@ do k = 1,time_steps
                                     req(4), & !
                                       ierr)   ! ierr = 0 if successful
     end if
+
+!------------------------------------------------------------------
+! communicate the time between neighbouring processors
+
+    ! send time of local processors (rank 0,1..) to right processor ((rank+1) 1,2..) 
+    if (rank /= nprocs-1) then
+        call MPI_Isend(      	   time, & ! starting address of data to be send
+                                      1, & ! number of bytes of data to be send
+                   MPI_DOUBLE_PRECISION, & ! datatype of data to be send
+                                 rank+1, & ! target processor rank
+                     id_t_left_to_right, & ! tag of the send signal
+                         MPI_COMM_WORLD, & !
+                                 req(5), & !
+                                   ierr)   ! ierr = 0 if successful
+    end if
+    
+    ! recieve time of left processor (rank-1) and store it in time_left variable
+    if (rank /= 0) then
+        call MPI_Irecv(			 time_left, & ! starting address of data to be send
+                                         1, & ! number of bytes of data to be send
+                      MPI_DOUBLE_PRECISION, & ! datatype of data to be send
+                                   rank-1 , & ! source processor rank
+                        id_t_left_to_right, & ! tag of the send signal
+                            MPI_COMM_WORLD, & !
+                                    req(6), & !
+                                      ierr)   ! ierr = 0 if successful
+    end if
+    
+    ! send time of local processors (rank = 1,2..) to left processor ((rank-1) 0,1..)
+    if (rank /= 0) then
+        call MPI_Isend(      	   time, & ! starting address of data to be send
+                                      1, & ! number of bytes of data to be send
+                   MPI_DOUBLE_PRECISION, & ! datatype of data to be send
+                                 rank-1, & ! target processor rank
+                     id_t_right_to_left, & ! tag of the send signal
+                         MPI_COMM_WORLD, & !
+                                 req(7), & !
+                                   ierr)   ! ierr = 0 if successful
+    end if
+    
+    ! receive time of local processor (rank+1) and store it in time_right variable
+    if (rank /= nprocs-1) then
+        call MPI_Irecv(			time_right, & ! starting address of data to be send
+                                         1, & ! number of bytes of data to be send
+                      MPI_DOUBLE_PRECISION, & ! datatype of data to be send
+                                   rank+1 , & ! source processor rank
+                        id_t_right_to_left, & ! tag of the send signal
+                            MPI_COMM_WORLD, & !
+                                    req(8), & !
+                                      ierr)   ! ierr = 0 if successful
+    end if 
     
 ! wait till Isend and Irecv above is completed
-    ! call MPI_Waitall(4, req, status_array, ierr)
+	
+    ! call MPI_Waitall(8, req, status_array, ierr)
+    ! print *, rank, time, time_left, time_right
     
 ! update old field to new field 
     do i = 1,nx_local
@@ -291,7 +370,7 @@ call MPI_FINALIZE(ierr) ! ierr = 0 if successful
 !deallocate(u_new)
 !deallocate(u_exact)
 
-end program advection_diffusion
+end program advection_diffusion_asynchronous
 
 
 !----------------------------- Initialize subroutine ---------------------------
