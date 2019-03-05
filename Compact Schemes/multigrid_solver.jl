@@ -1,4 +1,5 @@
 include("residualcalculation.jl")
+# include("residualcalculation_compact.jl")
 include("relax_multigrid.jl")
 include("mg_operation.jl")
 
@@ -14,7 +15,7 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     relaxation_coarsest     = relaxcount[3]
     flag_solver             = flag[2]
     flag_order              = flag[6]
-    println(flag_solver)
+    # println(flag_solver)
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
@@ -28,7 +29,8 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     push!(source_multigrid, source)
 
     # compute initial residual
-    compute_residual(nx, ny, dx, dy, source_multigrid[1], u_multigrid[1], residual, lambda)
+    function_residual(nx, ny, dx, dy, source_multigrid[1], u_multigrid[1], residual, lambda, flag_order)
+
     # compute initial L-2 norm
     rms = compute_l2norm(nx, ny, residual)
 
@@ -85,9 +87,8 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         # println(u_multigrid[1])
         # check for convergence only for finest grid
         # compute the residual and L2 norm
-
-        compute_residual(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
-                        source_multigrid[1], u_multigrid[1], residual, lambda)
+        function_residual(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
+                source_multigrid[1], u_multigrid[1], residual, lambda, flag_order)
 
         # compute the l2norm of residual
         rms = compute_l2norm(level_nx[1], level_ny[1], residual)
@@ -109,8 +110,8 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                 # from third level onwards residual is computed for (k-1) level
                 # which will be restricted to kth lvel error
                 temp_residual = zeros(Float64, level_nx[k-1]+1, level_ny[k-1]+1)
-                compute_residual(level_nx[k-1], level_ny[k-1], level_dx[k-1], level_dy[k-1],
-                                 source_multigrid[k-1], u_multigrid[k-1], temp_residual, lambda)
+                function_residual(level_nx[k-1], level_ny[k-1], level_dx[k-1], level_dy[k-1],
+                        source_multigrid[k-1], u_multigrid[k-1], temp_residual, lambda, flag_order)
             end
             # restrict reisudal from (k-1)th level to kth level
             restriction(level_nx[k-1], level_ny[k-1], level_nx[k], level_ny[k], temp_residual,

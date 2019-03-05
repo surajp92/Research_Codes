@@ -42,6 +42,8 @@ function biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
+    iteration_count = 0
+    println(iteration_count, " ", initial_rms, " ", rms/initial_rms)
 
     # allocate the matric for direction and set the initial direction (conjugate vector)
     f_initial = zeros(Float64, nx+1, ny+1)

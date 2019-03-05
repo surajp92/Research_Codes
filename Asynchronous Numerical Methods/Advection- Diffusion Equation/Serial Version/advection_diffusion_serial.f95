@@ -19,7 +19,7 @@ real*8, dimension(:,:), allocatable	   	:: u_exact
 real*8, dimension(:), allocatable	   	:: x, t
 real*8, parameter				:: pi = 3.14159265358979323846264338D0
 real*8, parameter				:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter				:: nx = 32
+integer, parameter				:: nx = 512
 real*8						    :: dx, dt, x_loc_min
 integer						    :: i, k 			! space and time index
 integer						    :: time_steps 		! total number of time steps from 0 to T = 1.0
@@ -120,10 +120,12 @@ do angle_par = 1, angle_num
 	deallocate(t)
 end do
 
+call cpu_time(stop_time)
     
     avg_error = error_sum/(nx*angle_num)
     print *, 'Nx', nx
 	print *,'Average error', avg_error
+	print *, 'Time', stop_time-start_time
     
 end program advection_diffusion
 

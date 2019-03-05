@@ -31,7 +31,8 @@ function gauss_seidel(dx, dy, nx, ny, residual, source, u_numerical, rms,
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
-    println(initial_rms)
+    iteration_count = 0
+    println(iteration_count, " ", initial_rms, " ", rms/initial_rms)
 
     factor = -2.0/dx^2 - 2.0/dy^2 - lambda*lambda
     for iteration_count = 1:maximum_iterations

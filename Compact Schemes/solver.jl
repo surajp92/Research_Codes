@@ -79,9 +79,19 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     elseif flag_multigrid != 1
         # @enter multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         #                 initial_rms, maximum_iterations, tiny, lambda, output)
-
-        n_level = flag_multigrid
-        println(n_level)
+        nx_temp = nx
+        n_level = 0
+        if flag_multigrid == 0
+            global n_level, nx_temp
+            while (nx_temp/2) >= 1.0
+                n_level+=1
+                nx_temp = round(nx_temp/2)
+            end
+        else
+            n_level = flag_multigrid
+        end
+        # println("n_level = ", n_level)
+        # println("nx = ", nx)
         multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
             initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount, flag)
     end

@@ -48,16 +48,14 @@ function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_pr
     elseif flag_problem == 2
     # a test case from Moin's book "Engineering NUmerical Analysis"
         c1 = (1.0/16.0)^2
-        c2 = -2.0*pi*2
+        c2 = -2.0*pi*pi
         for i = 1:nx+1 for j = 1:ny+1
 
-            source[i,j] = c2 * sin(pi * x_position[i]) * sin(pi * y_position[j])
-                        + c2 * sin(16.0 * pi * x_position[i]) *
-                        sin(16.0 * pi * y_position[j])
+            source[i,j] = c2 * sin(pi * x_position[i]) * sin(pi * y_position[j]) +
+                          c2 * sin(16.0 * pi * x_position[i]) * sin(16.0 * pi * y_position[j])
 
             u_exact[i,j] = sin(pi * x_position[i]) * sin(pi * y_position[j]) +
-                           c1 * sin(16.0 * pi * x_position[i]) *
-                           sin(16.0 * pi * y_position[j])
+                           c1 * sin(16.0 * pi * x_position[i]) * sin(16.0 * pi * y_position[j])
         end end
 
     elseif flag_problem == 3

@@ -35,14 +35,14 @@ function relax_multigrid(nx, ny, dx, dy, source, u_numerical, lambda, tiny,
         # println("Compact scheme in progress")
         if flag_solver == 1
             jacobi_solver_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
-        # elseif flag_solver == 2
-        #     gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
-        # elseif flag_solver == 3
-        #     steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
-        # elseif flag_solver == 4
-        #     conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
-        # elseif flag_solver == 5
-        #     biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+        elseif flag_solver == 2
+             gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+        elseif flag_solver == 3
+            steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+        elseif flag_solver == 4
+            conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+        elseif flag_solver == 5
+            biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
         end
     end
 end

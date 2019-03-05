@@ -1,4 +1,5 @@
-include("residualcalculation_compact.jl")
+include("residualcalculation.jl")
+# include("residualcalculation_compact.jl")
 
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
@@ -36,16 +37,19 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
     rms = compute_l2norm_compact(nx, ny, residual)
 
     initial_rms = rms
-    # println(initial_rms)
+    iteration_count = 0
+    println(iteration_count, " ", rms, " ", rms/initial_rms)
 
     del_residual    = zeros(Float64, nx+1, ny+1)
 
     # calculate constant coefficients
     ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
-    nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
+    nn = ss = -12.0/(50.0*dx*dx) + 6.0/(5.0*dy*dy)
     ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
     cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
+
+    # gg = 100.0/144.0
 
     # start calculation
     for iteration_count = 1:maximum_iterations
@@ -60,7 +64,7 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
                        se*residual[i+1,j-1] + sw*residual[i-1,j-1]
             X = x_grid + x_corner
 
-            del_residual[i,j] = X - cc*residual[i,j] -lambda2*residual[i,j]
+            del_residual[i,j] = (X - cc*residual[i,j] -lambda2*residual[i,j])
         end end
 
         aa = 0.0
@@ -102,4 +106,62 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
 
+end
+
+#------------------------------- Steepest Descent multigrid --------------------
+# This function performs steepst descent algorithm with 4th order
+# compact scheme for fixed number of iterations during relaxation of solution in
+# multigrid framework
+#-------------------------------------------------------------------------------
+function steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+
+    residual = zeros(Float64, nx+1, ny+1)
+    compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
+
+    del_residual    = zeros(Float64, nx+1, ny+1)
+
+    # calculate constant coefficients
+    ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
+    nn = ss = -12.0/(50.0*dx*dx) + 6.0/(5.0*dy*dy)
+    ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
+    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
+    lambda2 = lambda*lambda
+
+    # gg = 100.0/144.0
+
+    # start calculation
+    for iteration_count = 1:V
+
+        # calculate (∇^2-λ^2)(residual)
+        for j = 2:ny for i = 2:nx
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            x_grid = ee*residual[i+1,j] + ww*residual[i-1,j] +
+                     nn*residual[i,j+1] + ss*residual[i,j-1]
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            x_corner = ne*residual[i+1,j+1] + nw*residual[i-1,j+1] +
+                       se*residual[i+1,j-1] + sw*residual[i-1,j-1]
+            X = x_grid + x_corner
+
+            del_residual[i,j] = (X - cc*residual[i,j] -lambda2*residual[i,j])
+        end end
+
+        aa = 0.0
+        bb = 0.0
+        # calculate aa, bb, cc. cc is the distance parameter(α_n)
+        for j = 2:ny for i = 2:nx
+            aa = aa + residual[i,j]*residual[i,j]
+            bb = bb + del_residual[i,j]*residual[i,j]
+        end end
+        cc = aa/(bb + tiny)
+
+        # update the numerical solution by adding some component of residual
+        for j = 2:ny for i = 2:nx
+            u_numerical[i,j] = u_numerical[i,j] + cc * residual[i,j]
+        end end
+
+        # update the residual by removiing some component of previous residual
+        for j = 2:ny for i = 2:nx
+            residual[i,j] = residual[i,j] - cc * del_residual[i,j]
+        end end
+    end
 end

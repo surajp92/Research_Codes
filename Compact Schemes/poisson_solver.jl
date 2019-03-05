@@ -3,6 +3,8 @@ include("residualcalculation.jl")
 include("gauss_seidel.jl")
 include("solver.jl")
 
+clearconsole()
+
 using CPUTime
 using Printf
 using ASTInterpreter2
@@ -97,8 +99,6 @@ assign_problem(nx, ny, x_position, y_position, source, u_exact, flag[1],
 # assign initial condition (zero or random) based on start flag
 initial_condition(u_numerical, nx, ny, flag[4])
 
-
-
 # assign boundary conditions (exact solution) for the domain
 boundary_condition(u_numerical, u_exact, nx, ny)
 
@@ -130,6 +130,10 @@ end end
 
 rms_error = compute_l2norm(nx, ny, u_error)
 max_error = maximum(abs.(u_error))
+
+println("Error details:");
+println("L-2 Norm = ", rms_error);
+println("Maximum Norm = ", max_error);
 
 write(output, "Error details: \n");
 write(output, "L-2 Norm = ", string(rms_error), " \n");

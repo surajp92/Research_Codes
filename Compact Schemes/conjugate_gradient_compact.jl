@@ -1,4 +1,5 @@
-include("residualcalculation_compact.jl")
+include("residualcalculation.jl")
+#include("residualcalculation_compact.jl")
 
 #-------------------------------------------------------------------------------
 # This function performs the gauss seidel iteration to compute the numerical
@@ -123,4 +124,82 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
     write(output, "Maximum Norm = ", string(max_residual), " \n");
     write(output, "Iterations = ", string(count), " \n");
     close(residual_plot)
+end
+
+
+#------------------------------- Conjugate gradient multigrid ------------------
+# This function performs the conjugate gradient algorithm with 4th order
+# compact schemer  during relaxation for each level for Fixed numbe rof times
+#-------------------------------------------------------------------------------
+function conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
+
+    # allocate temporary residual matrix
+    residual = zeros(Float64, nx+1, ny+1)
+    compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
+
+    # allocate the matric for direction and set the initial direction (conjugate vector)
+    p = zeros(Float64, nx+1, ny+1)
+
+    # asssign conjugate vector to initial residual
+    for j = 1:ny+1 for i = 1:nx+1
+        p[i,j] = residual[i,j]
+    end end
+
+    del_p    = zeros(Float64, nx+1, ny+1)
+
+    # calculate constant coefficients
+    ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
+    nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
+    ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
+    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
+    lambda2 = lambda*lambda
+
+    # start calculation
+    for iteration_count = 1:V
+
+        # calculate ∇^2(residual)
+        for j = 2:ny for i = 2:nx
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            x_grid = ee*p[i+1,j] + ww*p[i-1,j] +
+                     nn*p[i,j+1] + ss*p[i,j-1]
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            x_corner = ne*p[i+1,j+1] + nw*p[i-1,j+1] +
+                       se*p[i+1,j-1] + sw*p[i-1,j-1]
+            X = x_grid + x_corner
+
+            del_p[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
+        end end
+
+        aa = 0.0
+        bb = 0.0
+        # calculate aa, bb, cc. cc is the distance parameter(α_n)
+        for j = 2:ny for i = 2:nx
+            aa = aa + residual[i,j]*residual[i,j]
+            bb = bb + del_p[i,j]*p[i,j]
+        end end
+        # cc = <r,r>/<d,p>
+        cc = aa/(bb + tiny)
+
+        # update the numerical solution by adding some component of conjugate vector
+        for j = 2:ny for i = 2:nx
+            u_numerical[i,j] = u_numerical[i,j] + cc * p[i,j]
+        end end
+
+        # bb = <r,r> = aa (calculated in previous loop)
+        bb = aa
+        aa = 0.0
+
+        # update the residual by removing some component of previous residual
+        for j = 1:ny for i = 1:nx
+            residual[i,j] = residual[i,j] - cc * del_p[i,j]
+            aa = aa + residual[i,j]*residual[i,j]
+        end end
+        # cc = <r-cd, r-cd>/<r,r>
+        cc = aa/bb
+
+        # update the conjugate vector
+        for j = 1:ny for i = 1:nx
+            p[i,j] = residual[i,j] + cc * p[i,j]
+        end end
+    end
 end

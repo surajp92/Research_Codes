@@ -1,4 +1,3 @@
-function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    nx, ny = number of grid in x and y direction
@@ -7,10 +6,9 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
 #
 # Returns/ assigns:
 #   residual = residual between source term and numericla solution at each grid
-#-------------------------------------------------------------------------------
-
 # residual = f + λ^2u - ∇^2u
-
+#-------------------------------------------------------------------------------
+function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
     # calculate constant coefficients
     ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
     nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
@@ -47,7 +45,6 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
     end end
 end
 
-function compute_l2norm_compact(nx, ny, residual)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    nx, ny = number of grid in x and y direction
@@ -56,6 +53,8 @@ function compute_l2norm_compact(nx, ny, residual)
 # Retrns/ assigns:
 #   rms =  root mean square of residual
 #-------------------------------------------------------------------------------
+function compute_l2norm_compact(nx, ny, residual)
+
     rms = 0.0
     # println(residual)
     for i = 2:nx for j = 2:ny

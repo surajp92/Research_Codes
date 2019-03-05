@@ -36,20 +36,20 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
     rms = compute_l2norm(nx, ny, residual)
 
     initial_rms = rms
-    # println(initial_rms)
+    iteration_count = 0
+    println(iteration_count, " ", rms, " ", rms/initial_rms)
 
     del_residual    = zeros(Float64, nx+1, ny+1)
 
     # start calculation
     for iteration_count = 1:maximum_iterations
 
-
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
 
             del_residual[i,j] = (residual[i+1,j] - 2*residual[i,j] + residual[i-1,j])/(dx^2) +
-                            (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
-                             lambda*lambda*residual[i,j]
+                                (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
+                                lambda*lambda*residual[i,j]
         end end
 
         aa = 0.0
@@ -68,7 +68,6 @@ function steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
 
         # update the residual by removiing some component of previous residual
         for j = 2:ny for i = 2:nx
-
             residual[i,j] = residual[i,j] - cc * del_residual[i,j]
         end end
 
@@ -95,7 +94,6 @@ end
 #------------------------------- Steepest Descent multigrid --------------------
 # This function performs steepst descent algorithm for fixed number of iterations
 # during relaxation of solution in multigrid framework
-#
 #-------------------------------------------------------------------------------
 function steepest_descent_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
 
@@ -111,8 +109,8 @@ function steepest_descent_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
             del_residual[i,j] = (residual[i+1,j] - 2*residual[i,j] + residual[i-1,j])/(dx^2) +
-                            (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
-                             lambda*lambda*residual[i,j]
+                                (residual[i,j+1] - 2*residual[i,j] + residual[i,j-1])/(dy^2) -
+                                lambda*lambda*residual[i,j]
         end end
 
         aa = 0.0
