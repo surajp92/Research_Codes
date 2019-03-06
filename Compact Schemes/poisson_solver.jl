@@ -3,7 +3,7 @@ include("residualcalculation.jl")
 include("gauss_seidel.jl")
 include("solver.jl")
 
-clearconsole()
+# clearconsole()
 
 using CPUTime
 using Printf

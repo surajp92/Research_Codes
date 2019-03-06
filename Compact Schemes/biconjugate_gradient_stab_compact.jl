@@ -65,8 +65,10 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
     ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
     nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
     ne = nw = se = sw = 6/(50*dx*dx) + 6/(50*dy*dy)
-    cc = 12/(5*dx*dx) + 12/(5*dy*dy)
+    cc1 = 12/(5*dx*dx) + 12/(5*dy*dy)
     lambda2 = lambda*lambda
+
+    gg = 100.0/144.0
 
     # initialize constant scalars
     alfa  = 1.0
@@ -103,7 +105,7 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            q[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
+            q[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
 
         end end
         temp = 0.0
@@ -131,7 +133,7 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
                        se*s[i+1,j-1] + sw*s[i-1,j-1]
             X = x_grid + x_corner
 
-            t[i,j] = X - cc*s[i,j] - lambda2*s[i,j]
+            t[i,j] = (X - cc1*s[i,j] - lambda2*s[i,j])*gg
 
         end end
 
@@ -200,7 +202,7 @@ function biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerica
     ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
     nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
     ne = nw = se = sw = 6/(50*dx*dx) + 6/(50*dy*dy)
-    cc = 12/(5*dx*dx) + 12/(5*dy*dy)
+    cc1 = 12/(5*dx*dx) + 12/(5*dy*dy)
     lambda2 = lambda*lambda
 
     # initialize constant scalars
@@ -238,7 +240,7 @@ function biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerica
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            q[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
+            q[i,j] = X - cc1*p[i,j] - lambda2*p[i,j]
 
         end end
         temp = 0.0
@@ -266,7 +268,7 @@ function biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerica
                        se*s[i+1,j-1] + sw*s[i-1,j-1]
             X = x_grid + x_corner
 
-            t[i,j] = X - cc*s[i,j] - lambda2*s[i,j]
+            t[i,j] = X - cc1*s[i,j] - lambda2*s[i,j]
 
         end end
 

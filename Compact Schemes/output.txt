@@ -1,7 +1,4 @@
 Residual details: 
-L-2 Norm = 4.202848249743513e-14 
-Maximum Norm = 9.414096207519639e-14 
-Iterations = 1 
 Error details: 
-L-2 Norm = 5.697104264387858e-5 
-Maximum Norm = 9.969932462672304e-5 
+L-2 Norm = 5.6971042644528276e-5 
+Maximum Norm = 9.969932462783326e-5 

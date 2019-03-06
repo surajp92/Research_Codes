@@ -35,12 +35,14 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
     residual_plot = open("residual.txt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
     count = 0.0
-
+    println("CG Compact")
     compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
 
     rms = compute_l2norm_compact(nx, ny, residual)
 
     initial_rms = rms
+    iteration_count = 0
+    println(iteration_count, " ", initial_rms, " ", rms/initial_rms)
 
     # allocate the matric for direction and set the initial direction (conjugate vector)
     p = zeros(Float64, nx+1, ny+1)
@@ -56,14 +58,18 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
     ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
     nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
     ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
-    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
+    cc1 = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
+
+    # source term scaling factor
+    gg = 100.0/144.0
 
     # start calculation
     for iteration_count = 1:maximum_iterations
 
         # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
+
             # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
             x_grid = ee*p[i+1,j] + ww*p[i-1,j] +
                      nn*p[i,j+1] + ss*p[i,j-1]
@@ -72,7 +78,8 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            del_p[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
+            del_p[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+
         end end
 
         aa = 0.0
@@ -93,17 +100,19 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
         # bb = <r,r> = aa (calculated in previous loop)
         bb = aa
         aa = 0.0
+        # bb = 0.0
 
         # update the residual by removing some component of previous residual
-        for j = 1:ny for i = 1:nx
+        for j = 2:ny for i = 2:nx
+            # bb = bb + residual[i,j]*residual[i,j]
             residual[i,j] = residual[i,j] - cc * del_p[i,j]
             aa = aa + residual[i,j]*residual[i,j]
         end end
         # cc = <r-cd, r-cd>/<r,r>
-        cc = aa/bb
+        cc = aa/(bb+tiny)
 
         # update the conjugate vector
-        for j = 1:ny for i = 1:nx
+        for j = 2:ny for i = 2:nx
             p[i,j] = residual[i,j] + cc * p[i,j]
         end end
 
@@ -151,8 +160,11 @@ function conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lamb
     ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
     nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
     ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
-    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
+    cc1 = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
+
+    # source term scaling factor
+    gg = 100.0/144.0
 
     # start calculation
     for iteration_count = 1:V
@@ -167,7 +179,7 @@ function conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lamb
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            del_p[i,j] = X - cc*p[i,j] - lambda2*p[i,j]
+            del_p[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
         end end
 
         aa = 0.0

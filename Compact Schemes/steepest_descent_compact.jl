@@ -44,12 +44,13 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
 
     # calculate constant coefficients
     ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
-    nn = ss = -12.0/(50.0*dx*dx) + 6.0/(5.0*dy*dy)
+    nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
     ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
-    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
+    cc1 = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
 
-    # gg = 100.0/144.0
+    # source term scaling factor
+    gg = 100.0/144.0
 
     # start calculation
     for iteration_count = 1:maximum_iterations
@@ -64,7 +65,7 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
                        se*residual[i+1,j-1] + sw*residual[i-1,j-1]
             X = x_grid + x_corner
 
-            del_residual[i,j] = (X - cc*residual[i,j] -lambda2*residual[i,j])
+            del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*residual[i,j])*gg
         end end
 
         aa = 0.0
@@ -122,12 +123,13 @@ function steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda
 
     # calculate constant coefficients
     ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
-    nn = ss = -12.0/(50.0*dx*dx) + 6.0/(5.0*dy*dy)
+    nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
     ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
-    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
+    cc1 = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
 
-    # gg = 100.0/144.0
+    # source term scaling factor
+    gg = 100.0/144.0
 
     # start calculation
     for iteration_count = 1:V
@@ -142,7 +144,7 @@ function steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda
                        se*residual[i+1,j-1] + sw*residual[i-1,j-1]
             X = x_grid + x_corner
 
-            del_residual[i,j] = (X - cc*residual[i,j] -lambda2*residual[i,j])
+            del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*residual[i,j])*gg
         end end
 
         aa = 0.0

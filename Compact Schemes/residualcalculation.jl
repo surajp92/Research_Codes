@@ -71,7 +71,7 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
     beta    = 1/10.0
     beta2   = 1/100.0
 
-    # gg = 100.0/144.0
+    gg = 100.0/144.0
 
     for i = 2:nx for j = 2:ny
 
@@ -98,7 +98,7 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
         X = x_grid + x_corner
 
         # calculate residual
-        residual[i,j] = (F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X)
+        residual[i,j] = (F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X)*gg
     end end
 end
 

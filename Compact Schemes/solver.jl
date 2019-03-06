@@ -10,7 +10,6 @@ include("conjugate_gradient_compact.jl")
 include("biconjugate_gradient_stab_compact.jl")
 include("multigrid_solver.jl")
 
-
 #-------------------------Solver function--------------------------------------
 # This function selects the iterative solver based on the flag_solver
 # Arguments:
