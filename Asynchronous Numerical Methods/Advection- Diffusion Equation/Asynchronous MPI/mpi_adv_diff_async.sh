@@ -8,4 +8,4 @@ ls
 /usr/bin/mpif90 -fbounds-check -o mpi_adv_diff_async.exe advection_diffusion_asynchronous.f95
 ls
 # Run the executable
-/usr/bin/mpirun -n 4 ./mpi_adv_diff_async.exe
+/usr/bin/mpirun -n 2 ./mpi_adv_diff_async.exe

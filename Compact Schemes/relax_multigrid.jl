@@ -15,14 +15,14 @@ include("biconjugate_gradient_stab_compact.jl")
 #
 #-------------------------------------------------------------------------------
 function relax_multigrid(nx, ny, dx, dy, source, u_numerical, lambda, tiny,
-                         V, flag_solver, flag_order)
+                         V, flag_solver, flag_order, omega)
     if flag_order == 1
         if flag_solver == 1
     # uncomment below line if debugging using ASTInterpreter2
     #    @ enter jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
-            jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+            jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V, omega)
         elseif flag_solver == 2
-            gauss_seidel_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+            gauss_seidel_mg(nx, ny, dx, dy, source, u_numerical, lambda, V, omega)
         elseif flag_solver == 3
             steepest_descent_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
         elseif flag_solver == 4

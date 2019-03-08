@@ -25,21 +25,22 @@ include("multigrid_solver.jl")
 
 function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                 initial_rms, maximum_iterations, tiny, lambda, output, flag,
-                relaxcount)
+                relaxcount, omega)
 
     flag_solver     = flag[2]
     flag_multigrid  = flag[3]
     flag_order      = flag[6]
 
     if flag_multigrid == 1 && flag_order == 1
+        # flag_solver     = flag[2]
         if flag_solver == 1
         # call jacobi solver
             jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                          initial_rms, maximum_iterations, lambda, output)
+                          initial_rms, maximum_iterations, lambda, output, omega)
         elseif flag_solver == 2
         # call gauss seidel solver
             gauss_seidel(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                         initial_rms, maximum_iterations, lambda, output)
+                         initial_rms, maximum_iterations, lambda, output, omega)
         elseif flag_solver == 3
         # call steepest descent solver
             steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -54,14 +55,15 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         end
 
     elseif flag_multigrid == 1 && flag_order == 2
+        # flag_solver     = flag[2]
         if flag_solver == 1
         # call jacobi solver
             jacobi_solver_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                          initial_rms, maximum_iterations, lambda, output)
+                          initial_rms, maximum_iterations, lambda, output, omega)
         elseif flag_solver == 2
         # call gauss seidel solver
             gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                         initial_rms, maximum_iterations, lambda, output)
+                         initial_rms, maximum_iterations, lambda, output, omega)
         elseif flag_solver == 3
         # call steepest descent solver
             steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -92,6 +94,7 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         # println("n_level = ", n_level)
         # println("nx = ", nx)
         multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-            initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount, flag)
+            initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount,flag,
+            omega)
     end
 end

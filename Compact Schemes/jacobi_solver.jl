@@ -20,7 +20,7 @@ include("residualcalculation.jl")
 # 30    calculate residual rms for ϕ^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
 function jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                       initial_rms, maximum_iterations, lambda, output)
+                       initial_rms, maximum_iterations, lambda, output, omega)
 
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
@@ -79,7 +79,7 @@ end
 #   u_numerical = numerical solution for different problems
 #
 #-------------------------------------------------------------------------------
-function jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+function jacobi_solver_mg(nx, ny, dx, dy, source, u_numerical, lambda, V, omega)
 
     residual = zeros(Float64, nx+1, ny+1)
     factor = -2.0/dx^2 - 2.0/dy^2 - lambda*lambda

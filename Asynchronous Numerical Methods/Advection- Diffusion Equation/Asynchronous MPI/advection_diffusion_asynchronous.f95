@@ -43,7 +43,7 @@ real*8, dimension(:,:), allocatable	   	:: u_exact
 real*8, dimension(:), allocatable	   	:: x, t
 real*8, parameter				:: pi = 3.14159265358979323846264338D0
 real*8, parameter				:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter				:: nx_global = 32
+integer, parameter				:: nx_global = 512
 integer						:: nx_local
 real*8						:: dx, dt, x_loc_min
 integer						:: i, k 
@@ -302,7 +302,7 @@ do k = 1,time_steps
     
 ! wait till Isend and Irecv above is completed
 	
-    ! call MPI_Waitall(8, req, status_array, ierr)
+    call MPI_Waitall(8, req, status_array, ierr)
     ! print *, rank, time, time_left, time_right
     
 ! update old field to new field 
@@ -351,16 +351,19 @@ call MPI_Barrier(MPI_COMM_WORLD, & !
 
 end do
 
+call cpu_time(stop_time)
+
 ! ensamble average of error
 if (rank == 0) then
 	avg_global_error = global_error_sum/(nx_global*angle_num)
 	print *, 'average global', avg_global_error
+	print *, 'Time', stop_time-start_time
 end if
 
 ! call subroutine to write the results for plotting
 ! call write_tecplot_file(x, t, u_new, u_exact, nx_local, time_steps, rank, nprocs)
 
-call cpu_time(stop_time)
+
 
 !------------------------------------------------------------------
 ! MPI final calls

@@ -1,7 +1,5 @@
-#module problem_assignment
+# module pa
 
-function calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
-                                x_right, y_top, y_bottom)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    nx, ny = number of grid in x and y direction
@@ -12,6 +10,8 @@ function calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
 #    x_position = an array with x-coordinates of each grid location
 #    y_position = an array with y-coordinates of each grid location
 #-------------------------------------------------------------------------------
+function calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
+                                x_right, y_top, y_bottom)
     # assign x position for each grid point
     for i = 1:nx+1
         x_position[i] = x_left + dx*(i-1)
@@ -23,8 +23,6 @@ function calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
     end
 end
 
-function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_problem,
-                        lambda)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    x_position = an array with x-coordinates of each grid location
@@ -36,6 +34,8 @@ function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_pr
 #    source = source term on rhs of poisson equation ∇2ϕ = S
 #    u_exact = exact solution for different problems
 #-------------------------------------------------------------------------------
+function assign_problem(nx, ny, x_position, y_position, source, u_exact,
+                        flag_problem, lambda)
     if flag_problem == 1
     # a test case from Moin's book "Engineering NUmerical Analysis"
         for i = 1:ny+1 for j = 1:nx+1
@@ -92,7 +92,6 @@ function assign_problem(nx, ny, x_position, y_position, source, u_exact, flag_pr
 end
 #end  # module problem_assignment
 
-function initial_condition(u_numerical, nx, ny, flag_start)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    nx, ny = number of grid in x and y direction
@@ -101,6 +100,7 @@ function initial_condition(u_numerical, nx, ny, flag_start)
 # Returns/ assigns:
 #   u_numerical = numerical solution
 #-------------------------------------------------------------------------------
+function initial_condition(u_numerical, nx, ny, flag_start)
     if flag_start == 1
         for i = 1:nx+1 for j = 1:ny+1
             u_numerical[i,j] = 0.0
@@ -112,7 +112,6 @@ function initial_condition(u_numerical, nx, ny, flag_start)
     end
 end
 
-function boundary_condition(u_numerical, u_exact, nx, ny)
 #-------------------------------------------------------------------------------
 # Arguments:
 #    nx,ny = number of grid in x and y direction
@@ -122,7 +121,7 @@ function boundary_condition(u_numerical, u_exact, nx, ny)
 # Returns/ assigns:
 #    boundary points of u_numerical
 #-------------------------------------------------------------------------------
-
+function boundary_condition(u_numerical, u_exact, nx, ny)
     for i = 1:nx+1
         u_numerical[i,1] = u_exact[i,1]
         u_numerical[i, ny+1] = u_exact[i, ny+1]
@@ -133,3 +132,5 @@ function boundary_condition(u_numerical, u_exact, nx, ny)
         u_numerical[nx+1,j] = u_exact[nx+1,j]
     end
 end
+
+#end

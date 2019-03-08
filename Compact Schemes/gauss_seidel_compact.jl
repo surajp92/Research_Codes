@@ -21,7 +21,7 @@ include("residualcalculation.jl")
 # 30    calculate residual rms for ϕ^(k+1) and go to 10 if rms < tolerance
 #-------------------------------------------------------------------------------
 function gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
-                       initial_rms, maximum_iterations, lambda, output)
+                       initial_rms, maximum_iterations, lambda, output, omega)
 
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
@@ -99,7 +99,7 @@ end
 # Relaxation using Gauss- seidel method with 4th order compact scheme
 # in multigrid framework
 #-------------------------------------------------------------------------------
-function gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+function gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V, omega)
 
     residual = zeros(Float64, nx+1, ny+1)
     factor = -12.0/(5.0*dx*dx) - 12.0/(5.0*dy*dy) - lambda*lambda
