@@ -19,7 +19,7 @@ real*8, dimension(:,:), allocatable	   	:: u_exact
 real*8, dimension(:), allocatable	   	:: x, t
 real*8, parameter				:: pi = 3.14159265358979323846264338D0
 real*8, parameter				:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter				:: nx = 512
+integer, parameter				:: nx = 128
 real*8						    :: dx, dt, x_loc_min
 integer						    :: i, k 			! space and time index
 integer						    :: time_steps 		! total number of time steps from 0 to T = 1.0
@@ -49,9 +49,14 @@ dt 			= cfl*(dx**2)/alpha
 time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
 ! time_steps = 1
 
-do angle_par = 1, angle_num
+
+!Plot field
+open(10,file='field_final.dat')
+write(10,*) 'variables ="x","u","ue","error"'
+
+do angle_par = 1, 1
 	phi 		= phis(angle_par)	! only one phase angle is considered. 
-	
+
 ! allocate the local array for field variables and grid positions
 	allocate(      u_old(0:nx, 0:time_steps))
 	allocate(      u_new(0:nx, 0:time_steps))
@@ -115,18 +120,26 @@ do angle_par = 1, angle_num
         error_sum = error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
     end do
     
+    
+    write(10,*)'zone T=',angle_par
+	do i=0,nx
+	write(10,*) x(i),",",u_old(i, time_steps),",",u_exact(i, time_steps),",",u_old(i, time_steps)-u_exact(i, time_steps)
+	end do
+
+    
 	deallocate(u_old, u_new, u_exact)
 	deallocate(x)
 	deallocate(t)
 end do
 
+close(10)
 call cpu_time(stop_time)
     
     avg_error = error_sum/(nx*angle_num)
     print *, 'Nx', nx
 	print *,'Average error', avg_error
 	print *, 'Time', stop_time-start_time
-    
+
 end program advection_diffusion
 
 !------------------------------------------------------------------
@@ -151,5 +164,13 @@ do i = 0,nx
 	u_exact(i,0) = sin(kappa*x(i) + pi*phi/180)
 	u_old(i,0)   = u_exact(i,0)
 end do
+
+!Plot field
+open(20,file='initial_field.dat')
+write(20,*) 'variables ="x","u","ue","error"'
+do i=0,nx
+write(20,*) x(i),",",u_old(i, 0),",",u_exact(i, 0),",",u_old(i, 0)-u_exact(i, 0)
+end do
+close(20)
 
 end subroutine initialize
