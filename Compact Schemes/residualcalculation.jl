@@ -62,10 +62,10 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
 
 
     # calculate constant coefficients
-    ee = ww = 6/(5*dx*dx) - 12/(50*dy*dy)
-    nn = ss = 6/(5*dy*dy) - 12/(50*dx*dx)
-    ne = nw = se = sw = 6/(50*dx*dx) + 6/(50*dy*dy)
-    cc = 12/(5*dx*dx) + 12/(5*dy*dy)
+    ee = ww = 6.0/(5.0*dx*dx) - 12.0/(50.0*dy*dy)
+    nn = ss = 6.0/(5.0*dy*dy) - 12.0/(50.0*dx*dx)
+    ne = nw = se = sw = 6.0/(50.0*dx*dx) + 6.0/(50.0*dy*dy)
+    cc = 12.0/(5.0*dx*dx) + 12.0/(5.0*dy*dy)
     lambda2 = lambda*lambda
     # coefficients for source term
     beta    = 1/10.0

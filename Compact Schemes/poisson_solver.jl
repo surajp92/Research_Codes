@@ -1,8 +1,11 @@
 include("problem_assignment.jl")
 include("residualcalculation.jl")
 include("gauss_seidel.jl")
-include("solver.jl")
-#import .pa
+include("jacobi_solver.jl")
+include("steepest_descent.jl")
+include("conjugate_gradient.jl")
+include("biconjugate_gradient_stab.jl")
+include("multigrid_solver.jl")
 
 using Profile
 using ProfileView
@@ -49,7 +52,7 @@ maximum_iterations      = Int32(input_parameters[12])
 tiny                    = Float64(input_parameters[13])
 lambda                  = Float64(input_parameters[14])
 flag[6]                 = Int32(input_parameters[15]) # flag for order of accuracy
-k = 1
+# k = 1
 
 
 # create output file for L2-norm
@@ -92,112 +95,16 @@ u_exact         = Array{Float64}(undef, nx+1, ny+1)
 source          = Array{Float64}(undef, nx+1, ny+1)
 u_numerical     = Array{Float64}(undef, nx+1, ny+1)
 
-# assign the computational domain, exact solution, source term ,
-# initial condition, boundary condition
-# function calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
-#                         x_right, y_top, y_bottom)
-#     # assign x position for each grid point
-#     for i = 1:nx+1
-#         x_position[i] = x_left + dx*(i-1)
-#     end
-#
-#     # assign x position for each grid point
-#     for i = 1:ny+1
-#         y_position[i] = y_bottom + dy*(i-1)
-#     end
-# end
 
 calculate_grid_position(x_position, y_position, nx, ny, dx, dy, x_left,
                         x_right, y_top, y_bottom)
-
-
-# function assign_problem(nx, ny, x_position, y_position, source, u_exact,
-#                         flag_problem, lambda)
-#         if flag_problem == 1
-#         # a test case from Moin's book "Engineering NUmerical Analysis"
-#             for i = 1:ny+1 for j = 1:nx+1
-#
-#                 source[i,j]  = -2.0 * (2.0 - x_position[i]^2 - y_position[j]^2)
-#
-#                 u_exact[i,j] = (x_position[i]^2 - 1.0)*(y_position[j]^2 - 1.0)
-#             end end
-#
-#         elseif flag_problem == 2
-#         # a test case from Moin's book "Engineering NUmerical Analysis"
-#             c1 = (1.0/16.0)^2
-#             c2 = -2.0*pi*pi
-#             for i = 1:nx+1 for j = 1:ny+1
-#
-#                 source[i,j] = c2 * sin(pi * x_position[i]) * sin(pi * y_position[j]) +
-#                               c2 * sin(16.0 * pi * x_position[i]) * sin(16.0 * pi * y_position[j])
-#
-#                 u_exact[i,j] = sin(pi * x_position[i]) * sin(pi * y_position[j]) +
-#                                c1 * sin(16.0 * pi * x_position[i]) * sin(16.0 * pi * y_position[j])
-#             end end
-#
-#         elseif flag_problem == 3
-#         # a test case for sin function
-#             c2 = -2.0*pi*pi
-#             for i = 1:nx+1 for j = 1:ny+1
-#
-#                 source[i,j] = c2 * sin(pi*x_position[i]) * sin(pi*y_position[j])
-#
-#                 u_exact[i,j] = sin(pi*x_position[i]) * sin(pi*y_position[j])
-#
-#             end end
-#         elseif flag_problem == 4
-#         # exponential function
-#             for i = 1:nx+1 for j = 1:ny+1
-#
-#                 source[i,j] = (x_position[i]^2 + y_position[j]^2) *
-#                               exp(x_position[i] * y_position[j])
-#
-#                 u_exact[i,j] = exp(x_position[i] * y_position[j])
-#             end end
-#         else
-#         # Helmholtz function with k = 1, l = 1
-#             k = 0.5
-#             l = 0.5
-#             c = -(lambda^2 + (k*k + l*l)*pi^2)
-#             for i = 1:nx+1 for j = 1:ny+1
-#
-#                 source[i,j] = c*sin(pi*k*x_position[i])*sin(pi*l*y_position[j])
-#
-#                 u_exact[i,j] = sin(pi*k*x_position[i]) * sin(pi*l*y_position[j])
-#             end end
-#         end
-# end
 
 # calculate the source term and exact solution based on the problem flag
 assign_problem(nx, ny, x_position, y_position, source, u_exact, flag[1],
                lambda)
 
-# function initial_condition(u_numerical, nx, ny, flag_start)
-#     if flag_start == 1
-#         for i = 1:nx+1 for j = 1:ny+1
-#             u_numerical[i,j] = 0.0
-#         end end
-#     else
-#         for i = 1:nx+1 for j = 1:ny+1
-#             u_numerical[i,j] = rand()
-#         end end
-#     end
-# end
-
 # assign initial condition (zero or random) based on start flag
 initial_condition(u_numerical, nx, ny, flag[4])
-
-# function boundary_condition(u_numerical, u_exact, nx, ny)
-#     for i = 1:nx+1
-#         u_numerical[i,1] = u_exact[i,1]
-#         u_numerical[i, ny+1] = u_exact[i, ny+1]
-#     end
-#
-#     for j = 1:ny+1
-#         u_numerical[1,j] = u_exact[1,j]
-#         u_numerical[nx+1,j] = u_exact[nx+1,j]
-#     end
-# end
 
 # assign boundary conditions (exact solution) for the domain
 boundary_condition(u_numerical, u_exact, nx, ny)
@@ -220,13 +127,82 @@ end end
 
 val, t, bytes, gctime, memallocs = @timed begin
 # @time begin
-# call the solver function to calculate the numerical solution
-    # println("a")
 
-    solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-           initial_rms, maximum_iterations, tiny, lambda, output, flag, relaxcount,
-           omega)
+    flag_solver     = flag[2]
+    flag_multigrid  = flag[3]
+    flag_order      = flag[6]
 
+    if flag_multigrid == 1
+    if flag_order == 1
+        if flag_solver == 1
+        # call jacobi solver
+            jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                          initial_rms, maximum_iterations, lambda, output, omega)
+        elseif flag_solver == 2
+        # call gauss seidel solver
+            gauss_seidel(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                         initial_rms, maximum_iterations, lambda, output, omega)
+        elseif flag_solver == 3
+        # call steepest descent solver
+            steepest_descent(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                             initial_rms, maximum_iterations, tiny, lambda, output)
+        elseif flag_solver == 4
+        # call conjugate gradient solver
+            conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                               initial_rms, maximum_iterations, tiny, lambda, output)
+        else
+            biconjugate_gradient_stab(dx, dy, nx, ny, residual, source, u_numerical,
+                                      rms, initial_rms, maximum_iterations, tiny, lambda, output)
+        end
+
+    elseif flag_order == 2
+        # flag_solver     = flag[2]
+        if flag_solver == 1
+        # call jacobi solver
+            jacobi_solver_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                          initial_rms, maximum_iterations, lambda, output, omega)
+        elseif flag_solver == 2
+        # call gauss seidel solver
+            gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                         initial_rms, maximum_iterations, lambda, output, omega)
+        elseif flag_solver == 3
+        # call steepest descent solver
+            steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                             initial_rms, maximum_iterations, tiny, lambda, output)
+        elseif flag_solver == 4
+        # call conjugate gradient solver
+            conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerical, rms,
+                               initial_rms, maximum_iterations, tiny, lambda, output)
+        else
+            biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_numerical,
+                                      rms, initial_rms, maximum_iterations, tiny, lambda, output)
+        end
+
+    end
+
+    elseif flag_multigrid != 1
+        nx_temp = nx
+        n_level = 0
+        if flag_multigrid == 0
+            while (nx_temp/2) >= 1
+                n_level+=1
+                nx_temp = round(nx_temp/2)
+                global n_level, nx_temp
+            end
+        else
+            n_level = flag_multigrid
+            global n_level
+        end
+        println("n_level = ", n_level)
+        println("nx = ", nx)
+
+        multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+            initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount,flag,
+            omega)
+    end
+    # solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
+    #        initial_rms, maximum_iterations, tiny, lambda, output, flag, relaxcount,
+    #        omega)
 end
 
 # ProfileView.view()

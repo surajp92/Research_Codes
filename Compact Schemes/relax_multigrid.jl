@@ -3,11 +3,11 @@ include("gauss_seidel.jl")
 include("steepest_descent.jl")
 include("conjugate_gradient.jl")
 include("biconjugate_gradient_stab.jl")
-include("jacobi_solver_compact.jl")
-include("gauss_seidel_compact.jl")
-include("steepest_descent_compact.jl")
-include("conjugate_gradient_compact.jl")
-include("biconjugate_gradient_stab_compact.jl")
+# include("jacobi_solver_compact.jl")
+# include("gauss_seidel_compact.jl")
+# include("steepest_descent_compact.jl")
+# include("conjugate_gradient_compact.jl")
+# include("biconjugate_gradient_stab_compact.jl")
 
 
 #------------------------ Relaxation multigrid----------------------------------
@@ -34,9 +34,9 @@ function relax_multigrid(nx, ny, dx, dy, source, u_numerical, lambda, tiny,
     elseif flag_order == 2
         # println("Compact scheme in progress")
         if flag_solver == 1
-            jacobi_solver_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+            jacobi_solver_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V, omega)
         elseif flag_solver == 2
-             gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V)
+             gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V, omega)
         elseif flag_solver == 3
             steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, tiny, V)
         elseif flag_solver == 4

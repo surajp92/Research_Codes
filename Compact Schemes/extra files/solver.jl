@@ -31,8 +31,9 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     flag_multigrid  = flag[3]
     flag_order      = flag[6]
 
-    if flag_multigrid == 1 && flag_order == 1
+    if flag_multigrid == 1 # && flag_order == 1
         # flag_solver     = flag[2]
+    if flag_order == 1
         if flag_solver == 1
         # call jacobi solver
             jacobi_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
@@ -54,7 +55,8 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                                       rms, initial_rms, maximum_iterations, tiny, lambda, output)
         end
 
-    elseif flag_multigrid == 1 && flag_order == 2
+    # elseif flag_multigrid == 1 && flag_order == 2
+    elseif flag_order == 2
         # flag_solver     = flag[2]
         if flag_solver == 1
         # call jacobi solver
@@ -77,6 +79,8 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                                       rms, initial_rms, maximum_iterations, tiny, lambda, output)
         end
 
+    end
+
     elseif flag_multigrid != 1
         # @enter multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         #                 initial_rms, maximum_iterations, tiny, lambda, output)
@@ -84,7 +88,7 @@ function solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
         n_level = 0
         if flag_multigrid == 0
             global n_level, nx_temp
-            while (nx_temp/2) >= 1.0
+            while (nx_temp/2) >= 1
                 n_level+=1
                 nx_temp = round(nx_temp/2)
             end
