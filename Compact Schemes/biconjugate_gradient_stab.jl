@@ -310,6 +310,9 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
     cc1 = 12/(5*dx*dx) + 12/(5*dy*dy)
     lambda2 = lambda*lambda
 
+    # source term scaling factor
+    beta_s    = 1/10.0
+    beta2_s   = 1/100.0
     gg = 100.0/144.0
 
     # initialize constant scalars
@@ -347,7 +350,16 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            q[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            p_grid = (p[i+1,j] + p[i-1,j] + p[i,j+1] + p[i,j-1])*beta_s
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            p_corner = (p[i+1,j+1] + p[i+1,j-1] + p[i-1,j+1] + p[i-1,j-1])*beta2_s
+
+            #total source term for compact scheme
+            P = p[i,j] + p_grid + p_corner
+
+            # q[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+             q[i,j] = (X - cc1*p[i,j] - lambda2*P)*gg
 
         end end
         temp = 0.0
@@ -375,7 +387,16 @@ function biconjugate_gradient_stab_compact(dx, dy, nx, ny, residual, source, u_n
                        se*s[i+1,j-1] + sw*s[i-1,j-1]
             X = x_grid + x_corner
 
-            t[i,j] = (X - cc1*s[i,j] - lambda2*s[i,j])*gg
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            s_grid = (s[i+1,j] + s[i-1,j] + s[i,j+1] + s[i,j-1])*beta_s
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            s_corner = (s[i+1,j+1] + s[i+1,j-1] + s[i-1,j+1] + s[i-1,j-1])*beta2_s
+
+            #total source term for compact scheme
+            S = s[i,j] + s_grid + s_corner
+
+            #t[i,j] = (X - cc1*s[i,j] - lambda2*s[i,j])*gg
+            t[i,j] = (X - cc1*s[i,j] - lambda2*S)*gg
 
         end end
 
@@ -447,6 +468,11 @@ function biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerica
     cc1 = 12/(5*dx*dx) + 12/(5*dy*dy)
     lambda2 = lambda*lambda
 
+    # source term scaling factor
+    beta_s    = 1/10.0
+    beta2_s   = 1/100.0
+    gg = 100.0/144.0
+
     # initialize constant scalars
     alfa  = 1.0
     omega = 1.0
@@ -482,7 +508,16 @@ function biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerica
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            q[i,j] = X - cc1*p[i,j] - lambda2*p[i,j]
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            p_grid = (p[i+1,j] + p[i-1,j] + p[i,j+1] + p[i,j-1])*beta_s
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            p_corner = (p[i+1,j+1] + p[i+1,j-1] + p[i-1,j+1] + p[i-1,j-1])*beta2_s
+
+            #total source term for compact scheme
+            P = p[i,j] + p_grid + p_corner
+
+            # q[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+            q[i,j] = (X - cc1*p[i,j] - lambda2*P)*gg
 
         end end
         temp = 0.0
@@ -510,7 +545,16 @@ function biconjugate_gradient_stab_compact_mg(nx, ny, dx, dy, source, u_numerica
                        se*s[i+1,j-1] + sw*s[i-1,j-1]
             X = x_grid + x_corner
 
-            t[i,j] = X - cc1*s[i,j] - lambda2*s[i,j]
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            s_grid = (s[i+1,j] + s[i-1,j] + s[i,j+1] + s[i,j-1])*beta_s
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            s_corner = (s[i+1,j+1] + s[i+1,j-1] + s[i-1,j+1] + s[i-1,j-1])*beta2_s
+
+            #total source term for compact scheme
+            S = s[i,j] + s_grid + s_corner
+
+            # t[i,j] = (X - cc1*s[i,j] - lambda2*s[i,j])*gg
+            t[i,j] = (X - cc1*s[i,j] - lambda2*S)*gg
 
         end end
 

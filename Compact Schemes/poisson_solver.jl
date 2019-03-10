@@ -59,14 +59,16 @@ flag[6]                 = Int32(input_parameters[15]) # flag for order of accura
 output = open("output.txt", "w");
 write(output, "Residual details: \n");
 # create text file for initial and final field
-field_initial = open("field_initial.txt", "w");
-field_final = open("field_final.txt", "w");
+field_initial = open("field_initial.dat", "w");
+field_final = open("field_final.dat", "w");
 
 write(field_initial, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\" \n")
 write(field_initial, "zone f=point i = ", string(nx), ",j = ", string(ny), "\n")
 
 write(field_final, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\", \"e\" \n")
-write(field_final, "zone f=point i = ", string(nx), ",j = ", string(ny), "\n")
+write(field_final, "zone T=\"n=1\"", "\n")
+write(field_final, "I = ", string(nx), ",J = ", string(ny), "\n")
+write(field_final, "DATAPACKING = POINT", "\n")
 
 
 # Assign the domain size based on initial problem

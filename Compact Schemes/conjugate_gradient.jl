@@ -240,6 +240,8 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
     lambda2 = lambda*lambda
 
     # source term scaling factor
+    beta    = 1/10.0
+    beta2   = 1/100.0
     gg = 100.0/144.0
 
     # start calculation
@@ -256,7 +258,16 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            del_p[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            p_grid = (p[i+1,j] + p[i-1,j] + p[i,j+1] + p[i,j-1])*beta
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            p_corner = (p[i+1,j+1] + p[i+1,j-1] + p[i-1,j+1] + p[i-1,j-1])*beta2
+
+            #total source term for compact scheme
+            P = p[i,j] + p_grid + p_corner
+
+            # del_p[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+            del_p[i,j] = (X - cc1*p[i,j] - lambda2*P)*gg
 
         end end
 
@@ -342,6 +353,8 @@ function conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lamb
     lambda2 = lambda*lambda
 
     # source term scaling factor
+    beta    = 1/10.0
+    beta2   = 1/100.0
     gg = 100.0/144.0
 
     # start calculation
@@ -357,7 +370,16 @@ function conjugate_gradient_compact_mg(nx, ny, dx, dy, source, u_numerical, lamb
                        se*p[i+1,j-1] + sw*p[i-1,j-1]
             X = x_grid + x_corner
 
-            del_p[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            p_grid = (p[i+1,j] + p[i-1,j] + p[i,j+1] + p[i,j-1])*beta
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            p_corner = (p[i+1,j+1] + p[i+1,j-1] + p[i-1,j+1] + p[i-1,j-1])*beta2
+
+            #total source term for compact scheme
+            P = p[i,j] + p_grid + p_corner
+
+            # del_p[i,j] = (X - cc1*p[i,j] - lambda2*p[i,j])*gg
+            del_p[i,j] = (X - cc1*p[i,j] - lambda2*P)*gg
         end end
 
         aa = 0.0

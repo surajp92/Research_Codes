@@ -97,8 +97,18 @@ function compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual,
                    se*u_numerical[i+1,j-1] + sw*u_numerical[i-1,j-1]
         X = x_grid + x_corner
 
+        # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+        un_grid = (u_numerical[i+1,j] + u_numerical[i-1,j] + u_numerical[i,j+1] + u_numerical[i,j-1])*beta
+        # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+        un_corner = (u_numerical[i+1,j+1] + u_numerical[i+1,j-1] + u_numerical[i-1,j+1] + u_numerical[i-1,j-1])*beta2
+
+        #total source term for compact scheme
+        UN = u_numerical[i,j] + un_grid + un_corner
+
         # calculate residual
-        residual[i,j] = (F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X)*gg
+        # residual[i,j] = (F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X)*gg
+
+        residual[i,j] = (F + lambda2*UN + cc*u_numerical[i,j] - X)*gg
     end end
 end
 

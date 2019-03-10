@@ -147,6 +147,8 @@ function gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms
     beta    = 1/10.0
     beta2   = 1/100.0
 
+    gg = 100.0/144.0
+
     for iteration_count = 1:maximum_iterations
 
         # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
@@ -168,8 +170,17 @@ function gauss_seidel_compact(dx, dy, nx, ny, residual, source, u_numerical, rms
 
             X = x_grid + x_corner
 
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            un_grid = (u_numerical[i+1,j] + u_numerical[i-1,j] + u_numerical[i,j+1] + u_numerical[i,j-1])*beta
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            un_corner = (u_numerical[i+1,j+1] + u_numerical[i+1,j-1] + u_numerical[i-1,j+1] + u_numerical[i-1,j-1])*beta2
+
+            #total source term for compact scheme
+            UN = u_numerical[i,j] + un_grid + un_corner
+
         # calculate residual
-            residual[i,j] = F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X
+            # residual[i,j] = (F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X)
+            residual[i,j] = (F + lambda2*UN + cc*u_numerical[i,j] - X)#*gg
 
         # caclulate numerical solution ϕ^(k+1) = ϕ^k + ωr^(k+1)
             u_numerical[i,j] = u_numerical[i,j] + omega * residual[i,j]/factor
@@ -234,9 +245,17 @@ function gauss_seidel_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda, V,
 
             X = x_grid + x_corner
 
-        # calculate residual
-            residual[i,j] = F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            un_grid = (u_numerical[i+1,j] + u_numerical[i-1,j] + u_numerical[i,j+1] + u_numerical[i,j-1])*beta
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            un_corner = (u_numerical[i+1,j+1] + u_numerical[i+1,j-1] + u_numerical[i-1,j+1] + u_numerical[i-1,j-1])*beta2
 
+            #total source term for compact scheme
+            UN = u_numerical[i,j] + un_grid + un_corner
+
+        # calculate residual
+            # residual[i,j] = F + lambda2*u_numerical[i,j] + cc*u_numerical[i,j] - X
+            residual[i,j] = F + lambda2*UN + cc*u_numerical[i,j] - X
         # update numerical solution
             u_numerical[i,j] = u_numerical[i,j] + omega * residual[i,j]/factor
         end end

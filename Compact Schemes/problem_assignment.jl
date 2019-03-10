@@ -77,6 +77,33 @@ function assign_problem(nx, ny, x_position, y_position, source, u_exact,
 
             u_exact[i,j] = exp(x_position[i] * y_position[j])
         end end
+    elseif flag_problem == 5
+    # GKZ1
+        for i = 1:nx+1 for j = 1:ny+1
+
+            source[i,j] = (x_position[i]^2)*(1.0-x_position[i]^2)*(2.0-12.0*(y_position[j]^2)) +
+                          (y_position[j]^2)*(1.0-y_position[j]^2)*(2.0-12.0*(x_position[i]^2))
+
+            u_exact[i,j] = (x_position[i]^2)*(y_position[j]^2)*
+                           (1.0-x_position[i]^2)*(1.0-y_position[j]^2)
+        end end
+    elseif flag_problem == 6
+    # GKZ2
+        for i = 1:nx+1 for j = 1:ny+1
+
+            source[i,j] = (x_position[i]^2 + y_position[j]^2) *
+                          exp(x_position[i] * y_position[j])
+
+            u_exact[i,j] = exp(x_position[i] * y_position[j])
+        end end
+    elseif flag_problem == 7
+    # GKZ3
+        for i = 1:nx+1 for j = 1:ny+1
+
+            source[i,j] = -52.0*cos(4.0*x_position[i]+6.0*y_position[j])
+
+            u_exact[i,j] = cos(4.0*x_position[i]+6.0*y_position[j])
+        end end
     else
     # Helmholtz function with k = 1, l = 1
         k = 0.5

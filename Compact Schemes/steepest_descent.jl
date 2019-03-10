@@ -185,6 +185,8 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
     lambda2 = lambda*lambda
 
     # source term scaling factor
+    beta    = 1/10.0
+    beta2   = 1/100.0
     gg = 100.0/144.0
 
     # start calculation
@@ -200,7 +202,16 @@ function steepest_descent_compact(dx, dy, nx, ny, residual, source, u_numerical,
                        se*residual[i+1,j-1] + sw*residual[i-1,j-1]
             X = x_grid + x_corner
 
-            del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*residual[i,j])*gg
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            res_grid = (residual[i+1,j] + residual[i-1,j] + residual[i,j+1] + residual[i,j-1])*beta
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            res_corner = (residual[i+1,j+1] + residual[i+1,j-1] + residual[i-1,j+1] + residual[i-1,j-1])*beta2
+
+            #total source term for compact scheme
+            RES = residual[i,j] + res_grid + res_corner
+
+            # del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*residual[i,j])*gg
+            del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*RES)*gg
         end end
 
         aa = 0.0
@@ -264,6 +275,8 @@ function steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda
     lambda2 = lambda*lambda
 
     # source term scaling factor
+    beta    = 1/10.0
+    beta2   = 1/100.0
     gg = 100.0/144.0
 
     # start calculation
@@ -279,7 +292,16 @@ function steepest_descent_compact_mg(nx, ny, dx, dy, source, u_numerical, lambda
                        se*residual[i+1,j-1] + sw*residual[i-1,j-1]
             X = x_grid + x_corner
 
-            del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*residual[i,j])*gg
+            # stencil corresponding to (i+1,j) (i-1,j) (i,j+1) (i,j-1)
+            res_grid = (residual[i+1,j] + residual[i-1,j] + residual[i,j+1] + residual[i,j-1])*beta
+            # stencil corresponding to (i+1,j+1) (i+1,j-1) (i-1,j+1) (i-1,j-1)
+            res_corner = (residual[i+1,j+1] + residual[i+1,j-1] + residual[i-1,j+1] + residual[i-1,j-1])*beta2
+
+            #total source term for compact scheme
+            RES = residual[i,j] + res_grid + res_corner
+
+            # del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*residual[i,j])*gg
+            del_residual[i,j] = (X - cc1*residual[i,j] -lambda2*RES)*gg
         end end
 
         aa = 0.0
