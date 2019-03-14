@@ -31,7 +31,7 @@ real*8, dimension(:), allocatable	:: u_initial_local
 real*8, dimension(:), allocatable	:: u_final_local
 real*8, parameter					:: pi = 3.14159265358979323846264338D0
 real*8, parameter					:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter					:: n_global = 1025
+integer, parameter					:: n_global = 64
 integer								:: n_local
 real*8								:: dx, x, dt
 integer								:: i, k

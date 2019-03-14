@@ -19,14 +19,14 @@ real*8, dimension(:,:), allocatable	   	:: u_exact
 real*8, dimension(:), allocatable	   	:: x, t
 real*8, parameter				:: pi = 3.14159265358979323846264338D0
 real*8, parameter				:: x_min = 0.0, x_max = 2.0*pi
-integer, parameter				:: nx = 128
+integer, parameter				:: nx = 64
 real*8						    :: dx, dt, x_loc_min
 integer						    :: i, k 			! space and time index
 integer						    :: time_steps 		! total number of time steps from 0 to T = 1.0
 real*8						    :: phi				! phase angle
 real*8						    :: start_time, stop_time, time 
 real*8						    :: error_sum, avg_error
-integer, parameter				:: angle_num = 1 	! number of randoom phase angle s for ensamble averaging
+integer, parameter				:: angle_num = 10 	! number of randoom phase angle s for ensamble averaging
 real*8, dimension(angle_num)	:: rand_angle, phis	! array for storing generated random numbers and phase angles
 integer							:: angle_par	! index for phis
 
@@ -52,9 +52,9 @@ time_steps 	= int(t_norm*2.0*pi/(abs(c)*dt))
 
 !Plot field
 open(10,file='field_final.dat')
-write(10,*) 'variables ="x","u","ue","error"'
 
-do angle_par = 1, 1
+
+do angle_par = 1, angle_num
 	phi 		= phis(angle_par)	! only one phase angle is considered. 
 
 ! allocate the local array for field variables and grid positions
@@ -120,10 +120,11 @@ do angle_par = 1, 1
         error_sum = error_sum + abs(u_old(i,time_steps) - u_exact(i,time_steps)) 
     end do
     
-    
+    write(10,*) 'variables ="x","u","ue","error"'
     write(10,*)'zone T=',angle_par
 	do i=0,nx
-	write(10,*) x(i),",",u_old(i, time_steps),",",u_exact(i, time_steps),",",u_old(i, time_steps)-u_exact(i, time_steps)
+	! write(10,*) x(i),",",u_old(i, time_steps),",",u_exact(i, time_steps),",",u_old(i, time_steps)-u_exact(i, time_steps)
+	write(10,*) x(i),u_old(i, time_steps),u_exact(i, time_steps),u_old(i, time_steps)-u_exact(i, time_steps)
 	end do
 
     
@@ -162,7 +163,8 @@ common /wavenumber/ kappa
 
 do i = 0,nx
 	u_exact(i,0) = sin(kappa*x(i) + pi*phi/180)
-	u_old(i,0)   = u_exact(i,0)
+	u_old(i,0)	= 0.0
+	! u_old(i,0)   = u_exact(i,0)
 end do
 
 !Plot field
