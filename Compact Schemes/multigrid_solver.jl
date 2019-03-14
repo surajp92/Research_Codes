@@ -18,8 +18,10 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     flag_order              = flag[6]
     # println(flag_solver)
     # create text file for writing residual history
-    residual_plot = open("residual.txt", "w")
+    residual_plot = open("residual.plt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
+    write(residual_plot, "zone T=\"", string(nx), " x ", string(ny), "\"\n")
+
     count = 0.0
 
     # define 3D matrix for u_multigrid

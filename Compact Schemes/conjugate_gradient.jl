@@ -31,8 +31,10 @@ function conjugate_gradient(dx, dy, nx, ny, residual, source, u_numerical, rms,
                       initial_rms, maximum_iterations, tiny, lambda, output)
 
     # create text file for writing residual history
-    residual_plot = open("residual.txt", "w")
+    residual_plot = open("residual.plt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
+    write(residual_plot, "zone T=\"", string(nx), " x ", string(ny), "\"\n")
+
     count = 0.0
 
     compute_residual(nx, ny, dx, dy, source, u_numerical, residual, lambda)
@@ -210,8 +212,10 @@ function conjugate_gradient_compact(dx, dy, nx, ny, residual, source, u_numerica
                       initial_rms, maximum_iterations, tiny, lambda, output)
 
     # create text file for writing residual history
-    residual_plot = open("residual.txt", "w")
+    residual_plot = open("residual.plt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
+    write(residual_plot, "zone T=\"", string(nx), " x ", string(ny), "\"\n")
+
     count = 0.0
     println("CG Compact")
     compute_residual_compact(nx, ny, dx, dy, source, u_numerical, residual, lambda)
