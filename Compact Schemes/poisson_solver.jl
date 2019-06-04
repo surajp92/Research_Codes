@@ -11,7 +11,7 @@ using Profile
 using ProfileView
 using BenchmarkTools
 
-# clearconsole()
+clearconsole()
 
 using CPUTime
 using Printf
