@@ -26,10 +26,11 @@ function compute_l2norm(nx, ny, r)
     return rms
 end
 
-function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
-                      tolerance, output)
+function conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
+                      init_rms, max_iter, tolerance, tiny, output)
+
     # create text file for writing residual history
-    residual_plot = open("residual.csv", "w")
+    residual_plot = open("residual.plt", "w")
     write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
     write(residual_plot, "zone T=\"", string(nx), " x ", string(ny), "\"\n")
 
@@ -39,34 +40,69 @@ function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
 
     rms = compute_l2norm(nx, ny, r)
 
-    init_rms = rms
-    iter_count = 0
-    println(iter_count, " ", init_rms, " ", rms/init_rms)
+    initial_rms = rms
+    iteration_count = 0
+    println(iteration_count, " ", initial_rms, " ", rms/initial_rms)
+    # allocate the matric for direction and set the initial direction (conjugate vector)
+    p = zeros(Float64, nx+1, ny+1)
 
-    den = -2.0/dx^2 - 2.0/dy^2
-    for iter_count = 1:max_iter
+    # asssign conjugate vector to initial residual
+    for j = 1:ny+1 for i = 1:nx+1
+        p[i,j] = r[i,j]
+    end end
 
-        # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
-        # residual = f + λ^2u - ∇^2u
+    del_p    = zeros(Float64, nx+1, ny+1)
+
+    # start calculation
+    for iteration_count = 1:max_iter
+
+        # calculate ∇^2(residual)
         for j = 2:ny for i = 2:nx
-            d2udx2 = (u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j])/(dx^2)
-            d2udy2 = (u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1])/(dy^2)
-            r[i,j] = f[i,j] - d2udx2 - d2udy2
-
-            u_n[i,j] = u_n[i,j] + r[i,j]/den
+            del_p[i,j] = (p[i+1,j] - 2.0*p[i,j] + p[i-1,j])/(dx^2) +
+                         (p[i,j+1] - 2.0*p[i,j] + p[i,j-1])/(dy^2)
         end end
 
-        compute_residual(nx, ny, dx, dy, f, u_n, r)
+        aa = 0.0
+        bb = 0.0
+        # calculate aa, bb, cc. cc is the distance parameter(α_n)
+        for j = 2:ny for i = 2:nx
+            aa = aa + r[i,j]*r[i,j]
+            bb = bb + del_p[i,j]*p[i,j]
+        end end
+        # cc = <r,r>/<d,p>
+        cc = aa/(bb + tiny)
+
+        # update the numerical solution by adding some component of conjugate vector
+        for j = 2:ny for i = 2:nx
+            u_n[i,j] = u_n[i,j] + cc*p[i,j]
+        end end
+
+        # bb = <r,r> = aa (calculated in previous loop)
+        bb = aa
+        aa = 0.0
+
+        # update the residual by removing some component of previous residual
+        for j = 2:ny for i = 2:nx
+            r[i,j] = r[i,j] - cc*del_p[i,j]
+            aa = aa + r[i,j]*r[i,j]
+        end end
+        # cc = <r-cd, r-cd>/<r,r>
+        cc = aa/(bb+tiny)
+
+        # update the conjugate vector
+        for j = 1:ny for i = 1:nx
+            p[i,j] = r[i,j] + cc*p[i,j]
+        end end
 
         # compute the l2norm of residual
         rms = compute_l2norm(nx, ny, r)
 
-        write(residual_plot, string(iter_count), " ",string(rms), " ", string(rms/init_rms)," \n");
-        count = iter_count
+        write(residual_plot, string(iteration_count), " ",string(rms), " ", string(rms/initial_rms)," \n");
+        count = iteration_count
 
-        println(iter_count, " ", rms, " ", rms/init_rms)
+        println(iteration_count, " ", rms, " ", rms/initial_rms)
 
-        if (rms/init_rms) <= tolerance
+        if (rms/initial_rms) <= tolerance
             break
         end
     end
@@ -77,10 +113,11 @@ function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
     close(residual_plot)
 end
 
-nx = Int64(32)
-ny = Int64(32)
+nx = Int64(128)
+ny = Int64(128)
 tolerance = Float64(1.0e-12)
 max_iter = Int64(100000)
+tiny = Float64(1.0e-16)
 
 # create output file for L2-norm
 output = open("output.txt", "w");
@@ -147,7 +184,8 @@ for j = 1:ny+1 for i = 1:nx+1
 end end
 val, t, bytes, gctime, memallocs = @timed begin
 
-gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, tolerance, output)
+conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
+                      init_rms, max_iter, tolerance, tiny, output)
 
 end
 u_error = zeros(nx+1, ny+1)
