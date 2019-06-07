@@ -38,7 +38,7 @@ function numerical(nx,ns,nt,dx,dt,u)
     x = Array{Float64}(undef, nx+1)
     un = Array{Float64}(undef, nx+1) # numerical solsution at every time step
     ut = Array{Float64}(undef, nx+1) # temporary array during RK3 integration
-    r = Array{Float64}(undef, nx-1)
+    r = Array{Float64}(undef, nx)
 
     k = 1 # record index
     freq = Int64(nt/ns)
@@ -50,11 +50,11 @@ function numerical(nx,ns,nt,dx,dt,u)
     end
 
     # dirichlet boundary condition
-    un[0] = 0.0
+    un[1] = 0.0
     un[nx+1] = 0.0
 
     # dirichlet boundary condition for temporary array
-    ut[0] = 0.0
+    ut[1] = 0.0
     ut[nx+1] = 0.0
 
     for j = 2:nt+1
@@ -67,7 +67,7 @@ function numerical(nx,ns,nt,dx,dt,u)
         rhs(nx,dx,ut,r)
 
         for i = 2:nx
-            ut[i] = 0.75*un[i] + 0.25*ut[i] + 0.25*d*r[i]
+            ut[i] = 0.75*un[i] + 0.25*ut[i] + 0.25*dt*r[i]
         end
 
         rhs(nx,dx,ut,r)
@@ -89,11 +89,11 @@ end
 #-----------------------------------------------------------------------------#
 function rhs(nx,dx,u,r)
     uL = Array{Float64}(undef, nx)
-    uR = Array{Float64}(undef, nx)
+    uR = Array{Float64}(undef, nx+1)
 
     crwenoL(nx,u,uL)
 
-    crweno(nx,u,uR)
+    crwenoR(nx,u,uR)
 
     for i = 2:nx
         if (u[i] >= 0.0)
@@ -161,17 +161,17 @@ end
 # f(j): reconstructed values at nodes j = i-1/2; j = 1,2,...,N
 #-----------------------------------------------------------------------------#
 function crwenoR(n,u,f)
-    a = Array{Float64}(undef, n)
-    b = Array{Float64}(undef, n)
-    c = Array{Float64}(undef, n)
-    r = Array{Float64}(undef, n)
+    a = Array{Float64}(undef, n+1)
+    b = Array{Float64}(undef, n+1)
+    c = Array{Float64}(undef, n+1)
+    r = Array{Float64}(undef, n+1)
 
-    i = 1
+    i = 2
     b[i] = 2.0/3.0
     c[i] = 1.0/3.0
     r[i] = (u[i-1] + 5.0*u[i])/6.0
 
-    for i = 2:n-2
+    for i = 3:n-1
         v1 = u[i-2]
         v2 = u[i-1]
         v3 = u[i]
@@ -185,7 +185,7 @@ function crwenoR(n,u,f)
         r[i] = b1*u[i-1] + b2*u[i] + b3*u[i+1]
     end
 
-    i = n-1
+    i = n
     v1 = u[i-2]
     v2 = u[i-1]
     v3 = u[i]
@@ -198,12 +198,12 @@ function crwenoR(n,u,f)
     c[i] = a3
     r[i] = b1*u[i-1] + b2*u[i] + b3*u[i+1]
 
-    i = n
+    i = n+1
     a[i] = 1.0/3.0
     b[i] = 2.0/3.0
     r[i] = (5.0*u[i-1] + u[i])/6.0
 
-    tdma(a,b,c,r,f,1,n)
+    tdma(a,b,c,r,f,2,n+1)
 
 end
 
@@ -244,7 +244,7 @@ function wcR(v1,v2,v3,v4,v5)
     eps = 1.0e-6
 
     s1 = 13.0/12.0*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
-    s2 = 13.0/12.0*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4^2
+    s2 = 13.0/12.0*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4)^2
     s3 = 13.0/12.0*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
 
     c1 = 3.0e-1/(eps+s1)^2
@@ -256,7 +256,7 @@ function wcR(v1,v2,v3,v4,v5)
     w3 = c3/(c1+c2+c3)
 
     a1 = w1/3.0
-    a2 = (w3 + 2.0*w2 + 2.0*w1)/3.0d
+    a2 = (w3 + 2.0*w2 + 2.0*w1)/3.0
     a3 = (2.0*w3 + w2)/3.0
 
     b1 = (w2 + 5.0*w1)/6.0
@@ -278,5 +278,12 @@ dx = 1.0/nx
 nt = Int64(tm/dt)
 ds = tm/ns
 
-u = Array{Float64}(undef, nt+1, nx+1)
+u = Array{Float64}(undef, nx+1, ns+1)
 numerical(nx,ns,nt,dx,dt,u)
+
+x = 0:dx:1.0
+
+p1 = plot(x,u,lw = 4,xlabel="X", ylabel = "U", xlims=(minimum(x),maximum(x)),
+     grid=(:none))
+
+plot(p1, size = (1000, 600))
