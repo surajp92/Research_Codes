@@ -4,6 +4,18 @@ using CPUTime
 using Printf
 using Plots
 
+#-----------------------------------------------------------------------------#
+# Compute L-2 norm for a vector
+#-----------------------------------------------------------------------------#
+function compute_l2norm(nx,r)
+    rms = 0.0
+    for i = 2:nx
+        rms = rms + r[i]^2
+    end
+    rms = sqrt(rms/((nx-1)))
+    return rms
+end
+
 x_l = -1.0
 x_r = 1.0
 dx = 0.025
@@ -18,6 +30,7 @@ nt = Int64(t/dt)
 x = Array{Float64}(undef, nx+1)
 u_e = Array{Float64}(undef, nx+1)
 u_n = Array{Float64}(undef, nt+1, nx+1)
+error = Array{Float64}(undef, nx+1)
 
 for i = 1:nx+1
     x[i] = x_l + dx*(i-1)  # location of each grid point
@@ -39,10 +52,13 @@ for k = 2:nt+1
     u_n[k,nx+1] = 0.0
 end
 
+error = u_n[nt+1,:] - u_e
+rms = compute_l2norm(nx,error)
+
 p1 = plot(x,u_e,lw = 4,xlabel="X", color = :red, ylabel = "U", xlims=(minimum(x),maximum(x)),
      grid=(:none), label = "Exact")
 
 p2 = plot(x,u_n[nt+1,:],lw = 4,xlabel="X", color = :blue, ylabel = "U", xlims=(minimum(x),maximum(x)),
      grid=(:none), label = "t=1")
 
-plot(p1, p2)
+plot(p1, p2, size = (1000, 400))
