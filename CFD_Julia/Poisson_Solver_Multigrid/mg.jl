@@ -44,7 +44,7 @@ function restriction(nxf, nyf, nxc, nyc, r, sc)
         # bottom boundary i = 1
         sc[1,j] = r[1, 2*j-1]
         # top boundary i = ny_coarse+1
-        sc[ny_coarse+1] = r[nyf+1, 2*j-1]
+        sc[nyc+1] = r[nyf+1, 2*j-1]
     end
 
     # restriction for boundary poinys left and right
@@ -103,7 +103,7 @@ function gauss_seidel_mg(nx, ny, dx, dy, f, un, V)
     end
 end
 
-function mg(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, output)
+function mg(dx, dy, nx, ny, r, f, u_n, rms, v1, v2, v3, init_rms, max_iter, output)
 
     # create text file for writing residual history
     residual_plot = open("residual.txt", "w")
@@ -145,7 +145,7 @@ function mg(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, output)
         # call relaxation on fine grid and compute the numerical solution
         # for fixed number of iteration
 
-        gauss_seidel_mg(lnx[1], lny[1], dx, dy, f, u_n, relaxation_f2c)
+        gauss_seidel_mg(lnx[1], lny[1], dx, dy, f, u_n, v1)
 
         # check for convergence only for finest grid
         # compute the residual and L2 norm
@@ -173,7 +173,7 @@ function mg(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, output)
 
         # solve on the coarsest level and relax V3 times
         gauss_seidel_mg(lnx[2], lny[2], ldx[2], ldy[2],
-                        fc, unc, relaxation_coarsest)
+                        fc, unc, v3)
 
         # prolongate solution from coarse level to fine level
         prolongation(lnx[2], lny[2], lnx[1], lny[1], unc, prol_fine)
@@ -184,7 +184,7 @@ function mg(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, output)
         end end
 
         # relax v2 times
-        gauss_seidel_mg(lnx[1], lny[1], dx, dy, f, u_n, relaxation_c2f)
+        gauss_seidel_mg(lnx[1], lny[1], dx, dy, f, u_n, v2)
     end
 end
 
@@ -211,6 +211,9 @@ x_r = 1.0
 y_b = 0.0
 y_t = 1.0
 
+v1 = 2 # relaxation
+v2 = 2 # prolongation
+v3 = 2 # coarsest level
 dx = (x_r - x_l)/nx
 dy = (y_t - y_b)/ny
 
@@ -258,7 +261,7 @@ for j = 1:ny+1 for i = 1:nx+1
 end end
 val, t, bytes, gctime, memallocs = @timed begin
 
-mg(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, output)
+mg(dx, dy, nx, ny, r, f, u_n, rms, v1, v2, v3, init_rms, max_iter, output)
 
 end
 u_error = zeros(nx+1, ny+1)
