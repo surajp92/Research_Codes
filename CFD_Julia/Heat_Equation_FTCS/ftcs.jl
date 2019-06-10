@@ -52,9 +52,11 @@ for k = 2:nt+1
     u_n[k,nx+1] = 0.0
 end
 
+# compute L2 norm of the error
 error = u_n[nt+1,:] - u_e
 rms = compute_l2norm(nx,error)
 
+# plotting the exact and numerical solution
 p1 = plot(x,u_e,lw = 4,xlabel="X", color = :red, ylabel = "U", xlims=(minimum(x),maximum(x)),
      grid=(:none), label = "Exact")
 
