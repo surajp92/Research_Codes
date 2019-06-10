@@ -30,9 +30,8 @@ function conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
                       init_rms, max_iter, tolerance, tiny, output)
 
     # create text file for writing residual history
-    residual_plot = open("residual.plt", "w")
-    write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
-    write(residual_plot, "zone T=\"", string(nx), " x ", string(ny), "\"\n")
+    residual_plot = open("residual.csv", "w")
+    write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
 
     count = 0.0
 
@@ -126,11 +125,8 @@ write(output, "Residual details: \n");
 field_initial = open("field_initial.csv", "w");
 field_final = open("field_final.csv", "w");
 
-write(field_initial, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\" \n")
-write(field_initial, "zone f=point i = ", string(nx+1), ",j = ", string(ny+1), "\n")
-
-write(field_final, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\", \"e\" \n")
-write(field_final, "zone f=point i = ", string(nx+1), ",j = ", string(ny+1), "\n")
+write(field_initial, "x y f un ue \n")
+write(field_final, "x y f un ue e \n")
 
 x_l = 0.0
 x_r = 1.0

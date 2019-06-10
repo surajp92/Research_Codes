@@ -3,6 +3,7 @@ clearconsole()
 using CPUTime
 using Printf
 using Plots
+using ASTInterpreter2
 
 #-----------------------------------------------------------------------------#
 # Compute L-2 norm for a vector
@@ -53,14 +54,24 @@ for k = 2:nt+1
 end
 
 # compute L2 norm of the error
-error = u_n[nt+1,:] - u_e
-rms = compute_l2norm(nx,error)
+u_error = u_n[nt+1,:] - u_e
+rms_error = compute_l2norm(nx,u_error)
+max_error = maximum(abs.(u_error))
 
-# plotting the exact and numerical solution
-p1 = plot(x,u_e,lw = 4,xlabel="X", color = :red, ylabel = "U", xlims=(minimum(x),maximum(x)),
-     grid=(:none), label = "Exact")
+# create output file for L2-norm
+output = open("output.txt", "w");
+write(output, "Error details: \n");
+write(output, "L-2 Norm = ", string(rms_error), " \n");
+write(output, "Maximum Norm = ", string(max_error), " \n");
 
-p2 = plot(x,u_n[nt+1,:],lw = 4,xlabel="X", color = :blue, ylabel = "U", xlims=(minimum(x),maximum(x)),
-     grid=(:none), label = "t=1")
+# create text file for final field
+field_final = open("field_final.csv", "w");
+write(field_final, "x"," ", "ue", " ", "un", " ", "uerror" ," \n")
 
-plot(p1, p2, size = (1000, 400))
+for i = 1:nx+1
+    write(field_final, @sprintf("%.16f",x[i])," ",@sprintf("%.16f", u_e[i])," ",
+          @sprintf("%.16f", u_n[nt+1,i])," ",@sprintf("%.16f", u_error[i])," \n")
+end
+
+close(field_final)
+close(output);

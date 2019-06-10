@@ -3,6 +3,7 @@ clearconsole()
 using CPUTime
 using Printf
 using ASTInterpreter2
+using Plots
 
 function compute_residual(nx, ny, dx, dy, f, u_n, r)
 
@@ -188,8 +189,8 @@ function mg(dx, dy, nx, ny, r, f, u_n, rms, v1, v2, v3, init_rms, max_iter, outp
     end
 end
 
-nx = Int64(32)
-ny = Int64(32)
+nx = Int64(128)
+ny = Int64(128)
 tolerance = Float64(1.0e-12)
 max_iter = Int64(100000)
 
@@ -235,13 +236,16 @@ c1 = (1.0/16.0)^2
 c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
-    f[i,j] = c2 * sin(pi*x[i]) * sin(pi*y[j]) +
-                  c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
-
-    u_e[i,j] = sin(pi*x[i]) * sin(pi*y[j]) +
-               c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
-
+    u_e[i,j] = sin(3.0*x[i]) + cos(2.0*y[j])
+    f[i,j] = -9.0*sin(3.0*x[i]) -4.0*cos(2.0*y[j])
     u_n[i,j] = 0.0
+    # f[i,j] = c2 * sin(pi*x[i]) * sin(pi*y[j]) +
+    #               c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+    #
+    # u_e[i,j] = sin(pi*x[i]) * sin(pi*y[j]) +
+    #            c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+    #
+    # u_n[i,j] = 0.0
 end end
 
 u_n[:,1] = u_e[:,1]
@@ -290,4 +294,9 @@ end end
 
 close(field_initial)
 close(field_final)
-close(output);
+close(output)
+
+p1 = contour(x, y, transpose(u_e), fill=true)
+p2 = contour(x, y, transpose(u_n), fill=true)
+p3 = plot(p1,p2, size = (1000, 400))
+savefig(p3,"contour.pdf")

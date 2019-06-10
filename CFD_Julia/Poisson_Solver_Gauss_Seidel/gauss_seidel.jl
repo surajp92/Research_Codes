@@ -30,8 +30,7 @@ function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
                       tolerance, output)
     # create text file for writing residual history
     residual_plot = open("residual.csv", "w")
-    write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
-    write(residual_plot, "zone T=\"", string(nx), " x ", string(ny), "\"\n")
+    write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
 
     count = 0.0
 
@@ -89,11 +88,11 @@ write(output, "Residual details: \n");
 field_initial = open("field_initial.csv", "w");
 field_final = open("field_final.csv", "w");
 
-write(field_initial, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\" \n")
-write(field_initial, "zone f=point i = ", string(nx+1), ",j = ", string(ny+1), "\n")
+#write(field_initial, "x"," ","y"," ","f"," ","un"," ","ue"," ","e", "\n")
+#write(field_final, "x"," ","y"," ","f"," ","un"," ","ue"," ","e", "\n")
 
-write(field_final, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\", \"e\" \n")
-write(field_final, "zone f=point i = ", string(nx+1), ",j = ", string(ny+1), "\n")
+write(field_initial, "x y f un ue \n")
+write(field_final, "x y f un ue e \n")
 
 x_l = 0.0
 x_r = 1.0
@@ -154,7 +153,6 @@ u_error = zeros(nx+1, ny+1)
 rms_error = 0.0
 
 u_error = u_n - u_e
-
 rms_error = compute_l2norm(nx, ny, u_error)
 max_error = maximum(abs.(u_error))
 
@@ -171,7 +169,7 @@ write(output, "CPU Time = ", string(t), " \n");
 for j = 1:ny+1 for i = 1:nx+1
     write(field_final, @sprintf("%.16f",x[i])," ", @sprintf("%.16f", y[j]), " ",
           @sprintf("%.16f", f[i,j])," ", @sprintf("%.16f", u_n[i,j])," ",
-          @sprintf("%.16f", u_e[i,j])," ", @sprintf("%.16f",(u_n[i,j]-u_e[i,j]))," \n")
+          @sprintf("%.16f", u_e[i,j])," ", @sprintf("%.16f",(u_error[i,j]))," \n")
 end end
 
 close(field_initial)

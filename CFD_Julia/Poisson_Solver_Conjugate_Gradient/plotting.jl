@@ -5,14 +5,15 @@ using Plots
 font = Plots.font("Times New Roman", 18)
 pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 
-nx = 32
-ny = 32
+nx = 128
+ny = 128
 residual_hist = CSV.read("residual.csv")#, datarow = 3, type=Float64)
 iter_hist =  residual_hist[:,1]
 res_hist = convert(Matrix, residual_hist[:,2:3])
 
 p = plot(iter_hist,res_hist,lw = 2,yscale = :log10, xlabel="Iteration count",
-               ylabel = "L2 Norm", xlims=(0,maximum(iter_hist)),grid=(:none))
+               ylabel = "L2 Norm", xlims=(0,maximum(iter_hist)),grid=(:none),
+               label=["rms" "rms/rms\$_0\$"])
 
 savefig(p,"myplot.pdf")
 

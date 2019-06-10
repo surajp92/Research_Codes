@@ -209,7 +209,7 @@ function crwenoR(n,u,f)
 end
 
 #---------------------------------------------------------------------------#
-#nonlinear weights for upwind direction
+# nonlinear weights for upwind direction
 #---------------------------------------------------------------------------#
 function wcL(v1,v2,v3,v4,v5)
     eps = 1.0e-6
