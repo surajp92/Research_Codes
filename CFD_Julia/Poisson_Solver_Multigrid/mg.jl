@@ -107,8 +107,9 @@ end
 function mg(dx, dy, nx, ny, r, f, u_n, rms, v1, v2, v3, init_rms, max_iter, output)
 
     # create text file for writing residual history
-    residual_plot = open("residual.txt", "w")
-    write(residual_plot, "variables =\"k\",\"rms\",\"rms/rms0\"\n")
+    residual_plot = open("residual.csv", "w")
+    write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
+
     count = 0.0
     # compute initial residual
     compute_residual(nx, ny, dx, dy, f, u_n, r)
@@ -187,6 +188,11 @@ function mg(dx, dy, nx, ny, r, f, u_n, rms, v1, v2, v3, init_rms, max_iter, outp
         # relax v2 times
         gauss_seidel_mg(lnx[1], lny[1], dx, dy, f, u_n, v2)
     end
+
+    write(output, "L-2 Norm = ", string(rms), " \n");
+    write(output, "Maximum Norm = ", string(maximum(abs.(r))), " \n");
+    write(output, "Iterations = ", string(count), " \n");
+    close(residual_plot)
 end
 
 nx = Int64(128)
@@ -197,15 +203,13 @@ max_iter = Int64(100000)
 # create output file for L2-norm
 output = open("output.txt", "w");
 write(output, "Residual details: \n");
+
 # create text file for initial and final field
 field_initial = open("field_initial.csv", "w");
 field_final = open("field_final.csv", "w");
 
-write(field_initial, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\" \n")
-write(field_initial, "zone f=point i = ", string(nx+1), ",j = ", string(ny+1), "\n")
-
-write(field_final, "variables =\"x\",\"y\",\"f\",\"u\",\"ue\", \"e\" \n")
-write(field_final, "zone f=point i = ", string(nx+1), ",j = ", string(ny+1), "\n")
+write(field_initial, "x y f un ue \n")
+write(field_final, "x y f un ue e \n")
 
 x_l = 0.0
 x_r = 1.0
@@ -236,16 +240,16 @@ c1 = (1.0/16.0)^2
 c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
-    u_e[i,j] = sin(3.0*x[i]) + cos(2.0*y[j])
-    f[i,j] = -9.0*sin(3.0*x[i]) -4.0*cos(2.0*y[j])
-    u_n[i,j] = 0.0
-    # f[i,j] = c2 * sin(pi*x[i]) * sin(pi*y[j]) +
-    #               c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
-    #
-    # u_e[i,j] = sin(pi*x[i]) * sin(pi*y[j]) +
-    #            c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
-    #
+    # u_e[i,j] = sin(3.0*x[i]) + cos(2.0*y[j])
+    # f[i,j] = -9.0*sin(3.0*x[i]) -4.0*cos(2.0*y[j])
     # u_n[i,j] = 0.0
+    f[i,j] = c2 * sin(pi*x[i]) * sin(pi*y[j]) +
+                  c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+    u_e[i,j] = sin(pi*x[i]) * sin(pi*y[j]) +
+               c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+    u_n[i,j] = 0.0
 end end
 
 u_n[:,1] = u_e[:,1]
@@ -272,7 +276,6 @@ u_error = zeros(nx+1, ny+1)
 rms_error = 0.0
 
 u_error = u_n - u_e
-
 rms_error = compute_l2norm(nx, ny, u_error)
 max_error = maximum(abs.(u_error))
 
@@ -289,14 +292,9 @@ write(output, "CPU Time = ", string(t), " \n");
 for j = 1:ny+1 for i = 1:nx+1
     write(field_final, @sprintf("%.16f",x[i])," ", @sprintf("%.16f", y[j]), " ",
           @sprintf("%.16f", f[i,j])," ", @sprintf("%.16f", u_n[i,j])," ",
-          @sprintf("%.16f", u_e[i,j])," ", @sprintf("%.16f",(u_n[i,j]-u_e[i,j]))," \n")
+          @sprintf("%.16f", u_e[i,j])," ", @sprintf("%.16f",(u_error[i,j]))," \n")
 end end
 
 close(field_initial)
 close(field_final)
 close(output)
-
-p1 = contour(x, y, transpose(u_e), fill=true)
-p2 = contour(x, y, transpose(u_n), fill=true)
-p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"contour.pdf")

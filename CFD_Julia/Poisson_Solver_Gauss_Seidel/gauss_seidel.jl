@@ -76,14 +76,15 @@ function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
     close(residual_plot)
 end
 
-nx = Int64(32)
-ny = Int64(32)
+nx = Int64(128)
+ny = Int64(128)
 tolerance = Float64(1.0e-12)
 max_iter = Int64(100000)
 
 # create output file for L2-norm
 output = open("output.txt", "w");
 write(output, "Residual details: \n");
+
 # create text file for initial and final field
 field_initial = open("field_initial.csv", "w");
 field_final = open("field_final.csv", "w");

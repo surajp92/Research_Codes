@@ -1,6 +1,8 @@
 using CPUTime
 using Printf
 using Plots
+font = Plots.font("Times New Roman", 18)
+pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 
 #-----------------------------------------------------------------------------#
 # Compute L-2 norm for a vector
@@ -45,12 +47,13 @@ function numerical(nx,ns,nt,dx,dt,u)
     freq = Int64(nt/ns)
 
     for i = 1:nx+1
-        x[i] = dx*i
+        x[i] = dx*(i-1)
         un[i] = sin(2.0*pi*x[i])
         u[i,k] = un[i] # store solution at t=0
     end
 
     # dirichlet boundary condition
+    u[1,k], u[nx+1,k] = 0.0, 0.0
     un[1] = 0.0
     un[nx+1] = 0.0
 
@@ -214,13 +217,13 @@ end
 function wcL(v1,v2,v3,v4,v5)
     eps = 1.0e-6
 
-    s1 = 13.0/12.0*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
-    s2 = 13.0/12.0*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4)^2
-    s3 = 13.0/12.0*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
+    s1 = (13.0/12.0)*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
+    s2 = (13.0/12.0)*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4)^2
+    s3 = (13.0/12.0)*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
 
-    c1 = 2.0e-1/(eps+s1)^2
-    c2 = 5.0e-1/(eps+s2)^2
-    c3 = 3.0e-1/(eps+s3)^2
+    c1 = 2.0e-1/((eps+s1)^2)
+    c2 = 5.0e-1/((eps+s2)^2)
+    c3 = 3.0e-1/((eps+s3)^2)
 
     w1 = c1/(c1+c2+c3)
     w2 = c2/(c1+c2+c3)
@@ -244,9 +247,9 @@ end
 function wcR(v1,v2,v3,v4,v5)
     eps = 1.0e-6
 
-    s1 = 13.0/12.0*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
-    s2 = 13.0/12.0*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4)^2
-    s3 = 13.0/12.0*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
+    s1 = (13.0/12.0)*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
+    s2 = (13.0/12.0)*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4)^2
+    s3 = (13.0/12.0)*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
 
     c1 = 3.0e-1/(eps+s1)^2
     c2 = 5.0e-1/(eps+s2)^2
@@ -284,7 +287,10 @@ numerical(nx,ns,nt,dx,dt,u)
 
 x = 0:dx:1.0
 
-p1 = plot(x,u,lw = 4,xlabel="X", ylabel = "U", xlims=(minimum(x),maximum(x)),
-     grid=(:none))
+p1 = plot(x,u,lw = 1,
+          xlabel="\$X\$", ylabel = "\$U\$",
+          xlims=(minimum(x),maximum(x)),
+          grid=(:none), legend=:none)
 
 plot(p1, size = (1000, 600))
+savefig("crweno.pdf")

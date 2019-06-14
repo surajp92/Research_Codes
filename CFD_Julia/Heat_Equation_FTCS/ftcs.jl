@@ -30,31 +30,31 @@ nt = Int64(t/dt)
 
 x = Array{Float64}(undef, nx+1)
 u_e = Array{Float64}(undef, nx+1)
-u_n = Array{Float64}(undef, nt+1, nx+1)
+un = Array{Float64}(undef, nt+1, nx+1)
 error = Array{Float64}(undef, nx+1)
 
 for i = 1:nx+1
     x[i] = x_l + dx*(i-1)  # location of each grid point
-    u_n[1,i] = -sin(pi*x[i]) # initial condition @ t=0
+    un[1,i] = -sin(pi*x[i]) # initial condition @ t=0
     u_e[i] = -exp(-t)*sin(pi*x[i]) # initial condition @ t=0
 end
 
-u_n[1,1] = 0.0
-u_n[1,nx+1] = 0.0
+un[1,1] = 0.0
+un[1,nx+1] = 0.0
 
-α1 = α*dt/(dx*dx)
+beta = α*dt/(dx*dx)
 
 for k = 2:nt+1
     for i = 2:nx
-        u_n[k,i] = α1*(u_n[k-1,i+1] - 2.0*u_n[k-1,i] + u_n[k-1,i-1]) +
-                   u_n[k-1,i]
+        un[k,i] = un[k-1,i] + beta*(un[k-1,i+1] -
+                                2.0*un[k-1,i] + un[k-1,i-1])
     end
-    u_n[k,1] = 0.0
-    u_n[k,nx+1] = 0.0
+    un[k,1] = 0.0 # boundary condition at x = -1
+    un[k,nx+1] = 0.0 # boundary condition at x = -1
 end
 
 # compute L2 norm of the error
-u_error = u_n[nt+1,:] - u_e
+u_error = un[nt+1,:] - u_e
 rms_error = compute_l2norm(nx,u_error)
 max_error = maximum(abs.(u_error))
 
@@ -70,7 +70,7 @@ write(field_final, "x"," ", "ue", " ", "un", " ", "uerror" ," \n")
 
 for i = 1:nx+1
     write(field_final, @sprintf("%.16f",x[i])," ",@sprintf("%.16f", u_e[i])," ",
-          @sprintf("%.16f", u_n[nt+1,i])," ",@sprintf("%.16f", u_error[i])," \n")
+          @sprintf("%.16f", un[nt+1,i])," ",@sprintf("%.16f", u_error[i])," \n")
 end
 
 close(field_final)

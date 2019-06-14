@@ -29,7 +29,7 @@ color=[:red :blue]
 p1 = plot(x,u, line = (6,styles), color=color,
                xlabel="\$X\$", xlims=(minimum(x),maximum(x)),
                ylabel = "\$U\$",
-               grid=(:none), label=["Exact solution" "ICP scheme"],
+               grid=(:none), label=["Exact solution" "FTCS scheme"],
                legend=:topright)
 
 plot(p1, size = (800, 400))
