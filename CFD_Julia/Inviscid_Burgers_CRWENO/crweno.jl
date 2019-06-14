@@ -19,6 +19,25 @@ end
 #-----------------------------------------------------------------------------#
 # Solution to tridigonal system using Thomas algorithm
 #-----------------------------------------------------------------------------#
+function tdms(a,b,c,r,x,s,e)
+    gam = Array{Float64}(undef, e)
+    bet = b[s]
+    x[s] = r[s]/bet
+
+    for i = s+1:e
+        gam[i] = c[i-1]/bet
+        bet = b[i] - a[i]*gam[i]
+        x[i] = (r[i] - a[i]*x[i-1])/bet
+    end
+
+    for i = e-1:-1:s
+        x[i] = x[i] - gam[i+1]*x[i+1]
+    end
+end
+
+#-----------------------------------------------------------------------------#
+# Solution to tridigonal system using Thomas algorithm
+#-----------------------------------------------------------------------------#
 function tdma(a,b,c,r,x,s,e)
     for i = s+1:e
         b[i] = b[i] - a[i]*(c[i-1]/b[i-1])
@@ -156,7 +175,7 @@ function crwenoL(n,u,f)
     b[i] = 2.0/3.0
     r[i] = (5.0*u[i] + u[i+1])/6.0
 
-    tdma(a,b,c,r,f,1,n)
+    tdms(a,b,c,r,f,1,n)
 end
 
 #-----------------------------------------------------------------------------#
@@ -207,7 +226,7 @@ function crwenoR(n,u,f)
     b[i] = 2.0/3.0
     r[i] = (5.0*u[i-1] + u[i])/6.0
 
-    tdma(a,b,c,r,f,2,n+1)
+    tdms(a,b,c,r,f,2,n+1)
 
 end
 

@@ -16,54 +16,51 @@ function compute_l2norm(nx, ny, r)
     return rms
 end
 
-function fps(nx,ny,dx,dy,f)
-    eps = 1.0e-6
+function fps_sine(nx,ny,dx,dy,f)
 
-    kx = Array{Float64}(undef,nx)
-    ky = Array{Float64}(undef,ny)
+    #kx = Array{Float64}(undef,nx)
+    #ky = Array{Float64}(undef,ny)
 
-    data = Array{Complex{Float64}}(undef,nx,ny)
-    data1 = Array{Complex{Float64}}(undef,nx,ny)
-    e = Array{Complex{Float64}}(undef,nx,ny)
+    data = Array{Complex{Float64}}(undef,nx-1,ny-1)
+    data1 = Array{Complex{Float64}}(undef,nx-1,ny-1)
+    e = Array{Complex{Float64}}(undef,nx-1,ny-1)
 
-    u = Array{Complex{Float64}}(undef,nx,ny)
-
-    aa = -2.0/(dx*dx) - 2.0/(dy*dy)
-    bb = 2.0/(dx*dx)
-    cc = 2.0/(dy*dy)
+    u = Array{Complex{Float64}}(undef,nx-1,ny-1)
 
     #wave number indexing
-    hx = 2.0*pi/nx
+    #hx = 2.0*pi/nx
 
-    for i = 1:Int64(nx/2)
-        kx[i] = hx*(i-1.0)
-        kx[i+Int64(nx/2)] = hx*(i-Int64(nx/2)-1)
-    end
-    kx[1] = eps
+    #for i = 1:Int64(nx/2)
+        #kx[i] = hx*(i-1.0)
+        #kx[i+Int64(nx/2)] = hx*(i-Int64(nx/2)-1)
+    #end
+    #kx[1] = eps
 
-    ky = kx
+    #ky = kx
 
-    for i = 1:nx
-        for j = 1:ny
-            data[i,j] = complex(f[i,j],0.0)
+    for i = 1:nx-1
+        for j = 1:ny-1
+            data[i,j] = f[i+1,j+1]
         end
     end
 
-    e = fft(data)
-    e[1,1] = 0.0
-    for i = 1:nx
-        for j = 1:ny
-            data1[i,j] = e[i,j]/(aa + bb*cos(kx[i]) + cc*cos(ky[j]))
+    e = FFTW.r2r(data,FFTW.RODFT00)
+
+    for i = 1:nx-1
+        for j = 1:ny-1
+            alpha = (2.0/(dx*dx))*(cos(pi*i/nx) - 1.0) +
+                    (2.0/(dy*dy))*(cos(pi*j/ny) - 1.0)
+            data1[i,j] = e[i,j]/alpha
         end
     end
 
-    u = real(ifft(data1))
+    u = FFTW.r2r(data1,FFTW.RODFT00)/((2*nx)*(2*ny))
 
     return u
 end
 
-nx = 128
-ny = 128
+nx = 64
+ny = 64
 
 x_l = 0.0
 x_r = 1.0
@@ -93,12 +90,6 @@ c2 = -8.0*pi*pi
 
 for j = 1:ny+1
     for i = 1:nx+1
-        # ue[i,j] = sin(3.0*2.0*pi*x[i]) + cos(2.0*2.0*pi*y[j])
-        # f[i,j] = -9.0*4.0*pi^2*sin(3.0*2.0*pi*x[i]) - 4.0*4.0*pi^2*cos(2.0*2.0*pi*y[j])
-
-        # ue[i,j] = cos(2.0*pi*x[i]) + cos(2.0*pi*y[j])
-        # f[i,j] = -4.0*pi*pi*ue[i,j]
-
         ue[i,j] = sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
                c1*sin(km*2.0*pi*x[i])*sin(km*2.0*pi*y[j])
 
@@ -111,13 +102,9 @@ end
 
 val, t, bytes, gctime, memallocs = @timed begin
 
-un[1:nx,1:ny] = fps(nx,ny,dx,dy,f)
+un[2:nx,2:ny] = fps_sine(nx,ny,dx,dy,f)
 
 end
-
-# Periodic boundary condition
-un[nx+1,:] = un[1,:]
-un[:,ny+1] = un[:,1]
 
 uerror = zeros(nx+1, ny+1)
 rms_error = 0.0

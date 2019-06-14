@@ -28,12 +28,8 @@ function fps(nx,ny,dx,dy,f)
 
     u = Array{Complex{Float64}}(undef,nx,ny)
 
-    aa = -2.0/(dx*dx) - 2.0/(dy*dy)
-    bb = 2.0/(dx*dx)
-    cc = 2.0/(dy*dy)
-
     #wave number indexing
-    hx = 2.0*pi/nx
+    hx = 2.0*pi/(nx*dx)
 
     for i = 1:Int64(nx/2)
         kx[i] = hx*(i-1.0)
@@ -53,7 +49,7 @@ function fps(nx,ny,dx,dy,f)
     e[1,1] = 0.0
     for i = 1:nx
         for j = 1:ny
-            data1[i,j] = e[i,j]/(aa + bb*cos(kx[i]) + cc*cos(ky[j]))
+            data1[i,j] = e[i,j]/(-kx[i]^2 -ky[j]^2)
         end
     end
 
@@ -135,4 +131,4 @@ print("CPU Time = ", t);
 p1 = contour(x, y, transpose(ue), fill=true)
 p2 = contour(x, y, transpose(un), fill=true)
 p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"contourd.pdf")
+savefig(p3,"contourp_spectral.pdf")
