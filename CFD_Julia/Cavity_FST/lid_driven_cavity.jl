@@ -12,63 +12,76 @@ pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 # Compute L-2 norm for a vector
 #-----------------------------------------------------------------------------#
 function compute_l2norm(nx, ny, r)
-    rms = 0.0
+    norm = 0.0
     # println(residual)
     for j = 1:ny+1 for i = 1:nx+1
-        rms = rms + r[i,j]^2
+        norm = norm + r[i,j]^2
     end end
     # println(rms)
-    rms = sqrt(rms/((nx+1)*(ny+1)))
-    return rms
+    norm = sqrt(norm/((nx+1)*(ny+1)))
+    return norm
 end
 
 #-----------------------------------------------------------------------------#
-# Fast poisson solver for periodic domain
+# Fast poisson solver for homozeneous Dirichlet domain
 #-----------------------------------------------------------------------------#
-function fps(nx,ny,dx,dy,f)
-    eps = 1.0e-6
+function fps_sine(nx,ny,dx,dy,f)
 
-    kx = Array{Float64}(undef,nx)
-    ky = Array{Float64}(undef,ny)
+    data = Array{Complex{Float64}}(undef,nx-1,ny-1)
+    data1 = Array{Complex{Float64}}(undef,nx-1,ny-1)
+    e = Array{Complex{Float64}}(undef,nx-1,ny-1)
 
-    data = Array{Complex{Float64}}(undef,nx,ny)
-    data1 = Array{Complex{Float64}}(undef,nx,ny)
-    e = Array{Complex{Float64}}(undef,nx,ny)
+    u = Array{Complex{Float64}}(undef,nx-1,ny-1)
 
-    u = Array{Complex{Float64}}(undef,nx,ny)
-
-    aa = -2.0/(dx*dx) - 2.0/(dy*dy)
-    bb = 2.0/(dx*dx)
-    cc = 2.0/(dy*dy)
-
-    #wave number indexing
-    hx = 2.0*pi/nx
-
-    for i = 1:Int64(nx/2)
-        kx[i] = hx*(i-1.0)
-        kx[i+Int64(nx/2)] = hx*(i-Int64(nx/2)-1)
-    end
-    kx[1] = eps
-
-    ky = kx
-
-    for i = 1:nx
-        for j = 1:ny
-            data[i,j] = complex(f[i,j],0.0)
+    for i = 1:nx-1
+        for j = 1:ny-1
+            data[i,j] = f[i+1,j+1]
         end
     end
 
-    e = fft(data)
-    e[1,1] = 0.0
-    for i = 1:nx
-        for j = 1:ny
-            data1[i,j] = e[i,j]/(aa + bb*cos(kx[i]) + cc*cos(ky[j]))
+    e = FFTW.r2r(data,FFTW.RODFT00)
+
+    for i = 1:nx-1
+        for j = 1:ny-1
+            alpha = (2.0/(dx*dx))*(cos(pi*i/nx) - 1.0) +
+                    (2.0/(dy*dy))*(cos(pi*j/ny) - 1.0)
+            data1[i,j] = e[i,j]/alpha
         end
     end
 
-    u = real(ifft(data1))
+    u = FFTW.r2r(data1,FFTW.RODFT00)/((2*nx)*(2*ny))
 
     return u
+end
+
+function bc(nx,ny,dx,dy,w,s)
+    # first order approximation
+    # boundary condition for vorticity (Hoffmann) left and right
+    for j = 1:ny+1
+        w[1,j] = -2.0*s[2,j]/(dx*dx)
+        w[nx+1,j]= -2.0*s[nx,j]/(dx*dx)
+    end
+
+    # boundary condition for vorticity (Hoffmann) bottom and top
+    for i = 1:nx+1
+        w[i,1] = -2.0*s[i,2]/(dy*dy)
+        w[i,ny+1]= -2.0*s[i,ny]/(dy*dy) - 2.0/dy
+    end
+end
+
+function bc2(nx,ny,dx,dy,w,s)
+    # second order approximation
+    # boundary condition for vorticity (Jensen) left and right
+    for j = 1:ny+1
+        w[1,j] = (-4.0*s[2,j]+0.5*s[3,j])/(dx*dx)
+        w[nx+1,j]= (-4.0*s[nx,j]+0.5*s[nx-1,j])/(dx*dx)
+    end
+
+    # boundary condition for vorticity (Jensen) bottom and top
+    for i = 1:nx+1
+        w[i,1] = (-4.0*s[i,2]+0.5*s[i,3])/(dy*dy)
+        w[i,ny+1]= (-4.0*s[i,ny]+0.5*s[i,ny-1])/(dy*dy) - 3.0/dy
+    end
 end
 
 #-----------------------------------------------------------------------------#
@@ -76,90 +89,74 @@ end
 #   - Time integration using Runge-Kutta third order
 #   - 2nd-order finite difference discretization
 #-----------------------------------------------------------------------------#
-function numerical(nx,ny,nt,dx,dy,dt,re,wn)
+function numerical(nx,ny,nt,dx,dy,dt,re,wn,sn,rms)
 
-    wt = Array{Float64}(undef, nx+2, ny+2) # temporary array during RK3 integration
-    r = Array{Float64}(undef, nx+2, ny+2)
+    wt = Array{Float64}(undef, nx+1, ny+1) # temporary array during RK3 integration
+    r = Array{Float64}(undef, nx+1, ny+1) # right hand side
+    sp = Array{Float64}(undef, nx+1, ny+1) # old streamfunction
 
-    for j = 1:nt
-        println(j)
+    for k = 1:nt
+
+        for i = 1:nx+1 for j = 1:ny+1
+            sp[i,j] = sn[i,j]
+        end end
+
         # Compute right-hand-side from vorticity
-        rhs(nx,ny,dx,dy,re,wn,r)
+        rhs(nx,ny,dx,dy,re,wn,sn,r)
 
-        for i = 2:nx+1 for j = 2:ny+1
+        for i = 2:nx for j = 2:ny
             wt[i,j] = wn[i,j] + dt*r[i,j]
         end end
+        bc2(nx,ny,dx,dy,wt,sn)
 
-        # periodic BC
-        wt[nx+2,:] = wt[2,:]
-        wt[:,ny+2] = wt[:,2]
-
-        # ghost points
-        wt[1,:] = wt[nx+1,:]
-        wt[:,1] = wt[:,ny+1]
+        # compute streamfunction from vorticity
+        sn[2:nx,2:ny] = fps_sine(nx,ny,dx,dy,-wt)
 
         # Compute right-hand-side from vorticity
-        rhs(nx,ny,dx,dy,re,wn,r)
+        rhs(nx,ny,dx,dy,re,wt,sn,r)
 
-        for i = 2:nx+1 for j = 2:ny+1
+        for i = 2:nx for j = 2:ny
             wt[i,j] = 0.75*wn[i,j] + 0.25*wt[i,j] + 0.25*dt*r[i,j]
         end end
+        bc2(nx,ny,dx,dy,wt,sn)
 
-        # periodic BC
-        wt[nx+2,:] = wt[2,:]
-        wt[:,ny+2] = wt[:,2]
-
-        # ghost points
-        wt[1,:] = wt[nx+1,:]
-        wt[:,1] = wt[:,ny+1]
+        # compute streamfunction from vorticity
+        sn[2:nx,2:ny] = fps_sine(nx,ny,dx,dy,-wt)
 
         # Compute right-hand-side from vorticity
-        rhs(nx,ny,dx,dy,re,wn,r)
+        rhs(nx,ny,dx,dy,re,wt,sn,r)
 
-        for i = 2:nx+1 for j = 2:ny+1
+        for i = 2:nx for j = 2:ny
             wn[i,j] = (1.0/3.0)*wn[i,j] + (2.0/3.0)*wt[i,j] + (2.0/3.0)*dt*r[i,j]
         end end
+        bc2(nx,ny,dx,dy,wn,sn)
 
-        # periodic BC
-        wn[nx+2,:] = wn[2,:]
-        wn[:,ny+2] = wn[:,2]
+        # compute streamfunction from vorticity
+        sn[2:nx,2:ny] = fps_sine(nx,ny,dx,dy,-wn)
 
-        # ghost points
-        wn[1,:] = wn[nx+1,:]
-        wn[:,1] = wn[:,ny+1]
+        rms[k] = 0.0
+        for i = 1:nx+1 for j = 1:ny+1
+            rms[k] = rms[k] + (sn[i,j] - sp[i,j])^2
+        end end
+
+        rms[k] = sqrt(rms[k]/((nx+1)*(ny+1)))
+        println(k, " ", rms[k])
+
     end
-
-    return wn[2:nx+2,2:ny+2]
 end
 
 #-----------------------------------------------------------------------------#
 # Calculate right hand term of the inviscid Burgers equation
 # r = -J(w,ψ) + ν ∇^2(w)
 #-----------------------------------------------------------------------------#
-function rhs(nx,ny,dx,dy,re,w,r)
-
-    # compute streamfunction from vorticity
-    s = Array{Float64}(undef, nx+2, ny+2)
-    f = Array{Float64}(undef, nx, ny)
-    f = w[2:nx+1,2:ny+1]
-
-    s[2:nx+1,2:ny+1] = fps(nx,ny,dx,dy,f)
-
-    # periodic BC
-    s[nx+2,:] = s[2,:]
-    s[:,ny+2] = s[:,2]
-
-    # ghost points
-    s[1,:] = s[nx+1,:]
-    s[:,1] = s[:,ny+1]
-
+function rhs(nx,ny,dx,dy,re,w,s,r)
     # Arakawa numerical scheme for Jacobian
     aa = 1.0/(re*dx*dx)
     bb = 1.0/(re*dy*dy)
     gg = 1.0/(4.0*dx*dy)
     hh = 1.0/3.0
 
-    for i = 2:nx+1 for j = 2:ny+1
+    for i = 2:nx for j = 2:ny
         j1 = gg*((w[i+1,j]-w[i-1,j])*(s[i,j+1]-s[i,j-1]) -
                  (w[i,j+1]-w[i,j-1])*(s[i+1,j]-s[i-1,j]))
 
@@ -181,18 +178,6 @@ function rhs(nx,ny,dx,dy,re,w,r)
         end end
 end
 
-# compute exact solution for TGV problem
-function exact_tgv(nx,ny,x,y,time,re)
-    ue = Array{Float64}(undef, nx+1, ny+1)
-
-    nq = 4.0
-    for i = 1:nx+1 for j = 1:ny+1
-        ue[i,j] = 2.0*nq*cos(nq*x[i])*cos(nq*y[j])*
-                  exp(-2.0*nq*nq*time/re)
-    end end
-    return ue
-end
-
 
 #---------------------------------------------------------------------------#
 # main program
@@ -201,20 +186,21 @@ nx = 64
 ny = 64
 
 x_l = 0.0
-x_r = 2.0*pi
+x_r = 1.0
 y_b = 0.0
-y_t = 2.0*pi
+y_t = 1.0
 
 dx = (x_r-x_l)/nx
 dy = (y_t-y_b)/ny
 
-dt = 0.01
-tf = 1.0
-nt = tf/dt
-re = 10.0
+dt = 0.001
+tf = 10.0
+nt = Int64(tf/dt)
+re = 100.0
 
 x = Array{Float64}(undef, nx+1)
 y = Array{Float64}(undef, ny+1)
+rms = Array{Float64}(undef, nt)
 
 for i = 1:nx+1
     x[i] = dx*(i-1)
@@ -223,34 +209,33 @@ for i = 1:ny+1
     y[i] = dy*(i-1)
 end
 
-wn = Array{Float64}(undef, nx+2, ny+2)
-un = Array{Float64}(undef, nx+1, ny+1)
-ue = Array{Float64}(undef, nx+1, ny+1)
-uerror = Array{Float64}(undef, nx+1, ny+1)
+wn = Array{Float64}(undef, nx+1, ny+1)
+sn = Array{Float64}(undef, nx+1, ny+1)
 
 time = 0.0
 
-wn[2:nx+2,2:ny+2] = exact_tgv(nx,ny,x,y,time,re)
-# ghost points
-wn[1,:] = wn[nx+1,:]
-wn[:,1] = wn[:,ny+1]
+for i = 1:nx+1 for j = 1:ny+1
+    wn[i,j] = 0.0 # initial condition
+    sn[i,j] = 0.0 # initial streamfunction
+end end
 
-un = numerical(nx,ny,nt,dx,dy,dt,re,wn)
+numerical(nx,ny,nt,dx,dy,dt,re,wn,sn,rms)
 
 time = tf
-ue = exact_tgv(nx,ny,x,y,time,re)
 
-uerror = un-ue
-
-rms_error = compute_l2norm(nx, ny, uerror)
-max_error = maximum(abs.(uerror))
-
-println("Error details:");
-println("L-2 Norm = ", rms_error);
-println("Maximum Norm = ", max_error);
-
-
-p1 = contour(x, y, transpose(ue), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Exact")
-p2 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Numerical")
+p1 = contour(x, y, transpose(wn), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Vorticity")
+p2 = contour(x, y, transpose(sn), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Streamfunction")
 p3 = plot(p1,p2, size = (1300, 600))
-savefig(p3,"tgv.pdf")
+savefig(p3,"cavity.pdf")
+
+color=[:red]
+t = Array(dt:dt:tf)
+p4 = plot(t,rms,lw = 3,
+         ylabel = "Residual", yscale = :log10,
+         xlabel="Time", #xlims=(0,maximum(iter_hist)+1),
+         grid=(:none),
+         label=["Residual"], color=color)
+         #markershape = [:circle, :circle], markercolor = color,
+         #markerstrokecolor = :black, markersize = 7)
+
+savefig(p4,"residual.pdf")
