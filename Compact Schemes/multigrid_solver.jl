@@ -8,8 +8,8 @@ include("mg_operation.jl")
 #
 #-------------------------------------------------------------------------------
 function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
-            initial_rms, maximum_iterations, tiny, lambda, output, n_level, relaxcount, flag,
-            omega)
+            initial_rms, maximum_iterations, tiny, lambda, output, n_level,
+            relaxcount, flag,omega)
 
     relaxation_f2c          = relaxcount[1]
     relaxation_c2f          = relaxcount[2]
@@ -81,13 +81,11 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
     for iteration_count = 1:maximum_iterations
         # call relaxation on fine grid and compute the numerical solution
         # for fixed number of iterations
-        # @enter relax_multigrid(level_nx[1], level_ny[1], dx, dy, source, u_numerical, lambda,
-        #                 relaxation_f2c)
 
         relax_multigrid(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
                         source_multigrid[1], u_multigrid[1], lambda, tiny,
                         relaxation_f2c, flag_solver, flag_order, omega)
-        # println(u_multigrid[1])
+
         # check for convergence only for finest grid
         # compute the residual and L2 norm
         function_residual(level_nx[1], level_ny[1], level_dx[1], level_dy[1],
@@ -133,7 +131,6 @@ function multigrid_solver(dx, dy, nx, ny, residual, source, u_numerical, rms,
                             source_multigrid[k], u_multigrid[k], lambda, tiny,
                             relaxation_coarsest, flag_solver, flag_order, omega)
             end
-            # println(u_multigrid[k])
         end
 
         for k = n_level:-1:2
